@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobilis - IFBA Juazeiro</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- LeafletJS for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Chart.js for Dashboards -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+
+    <!-- jsPDF for PDF Reports -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- Custom Fonts and Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide-react@0.292.0/dist/lucide-react.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* IFBA Color Palette */
+        :root {
+            --ifba-green-dark: #1C5240;
+            --ifba-green-light: #2F8C56;
+            --ifba-accent-gold: #F2A30F;
+        }
+
+        .bg-ifba-green-dark { background-color: var(--ifba-green-dark); }
+        .text-ifba-green-dark { color: var(--ifba-green-dark); }
+        .bg-ifba-green-light { background-color: var(--ifba-green-light); }
+        .text-ifba-green-light { color: var(--ifba-green-light); }
+        .bg-ifba-accent-gold { background-color: var(--ifba-accent-gold); }
+        .text-ifba-accent-gold { color: var(--ifba-accent-gold); }
+        .border-ifba-green-dark { border-color: var(--ifba-green-dark); }
+
+        .btn {
+            @apply w-full text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105;
+        }
+        .btn-primary {
+            @apply bg-ifba-green-dark hover:bg-ifba-green-light;
+        }
+        .btn-secondary {
+            @apply bg-ifba-accent-gold hover:opacity-90;
+        }
+        .btn-danger {
+            @apply bg-red-600 hover:bg-red-700;
+        }
+        .input-field {
+            @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ifba-green-light;
+        }
+        .screen {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .active-screen {
+            display: block;
+        }
+        .modal-overlay {
+            @apply fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50;
+        }
+        .modal-content {
+            @apply bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full text-center;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div id="app-container" class="max-w-4xl mx-auto min-h-screen bg-white shadow-lg">
+        
+        <!-- Header Supervisor -->
+        <header id="supervisor-header" class="hidden p-4 bg-ifba-green-dark text-white items-center justify-between shadow-md">
+            <img id="logo-left" src="https://placehold.co/100x40/1C5240/FFFFFF?text=Logo+1" alt="Logo Esquerda" class="h-10">
+            <h1 class="text-2xl font-bold text-white">Mobilis <span class="text-sm font-normal text-ifba-accent-gold">| Supervisor</span></h1>
+            <img id="logo-right" src="https://placehold.co/100x40/1C5240/FFFFFF?text=Logo+2" alt="Logo Direita" class="h-10">
+        </header>
+
+        <!-- Main Content -->
+        <main class="p-4 sm:p-6 md:p-8">
+
+            <!-- Tela Inicial -->
+            <div id="initial-screen" class="screen active-screen text-center">
+                <img src="https://i.ibb.co/6r0Bv5N/mob.png" alt="Logo Mobilis" class="mx-auto mb-8 w-48">
+                <h1 class="text-4xl font-bold text-ifba-green-dark mb-2">Bem-vindo ao Mobilis!</h1>
+                <p class="text-gray-600 mb-12">Seu assistente de mobilidade do IFBA - Campus Juazeiro.</p>
+                <div class="space-y-4 max-w-sm mx-auto">
+                    <button onclick="app.showScreen('user-login-register-screen')" class="btn btn-primary">
+                        <i data-lucide="user" class="inline-block mr-2"></i> Sou Estudante
+                    </button>
+                    <button onclick="app.showScreen('supervisor-login-screen')" class="btn btn-secondary">
+                        <i data-lucide="shield-check" class="inline-block mr-2"></i> Sou Supervisor
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Tela de Login/Cadastro do Usuário -->
+            <div id="user-login-register-screen" class="screen">
+                 <h2 class="text-2xl font-bold text-ifba-green-dark mb-6 text-center">Acesso do Estudante</h2>
+                 <form id="user-register-form" class="space-y-4 max-w-md mx-auto">
+                    <input type="text" id="user-fullname" placeholder="Nome Completo" class="input-field" required>
+                    <select id="user-course" class="input-field" required>
+                        <option value="" disabled selected>Selecione seu curso</option>
+                        <option value="Ensino Medio">Ensino Médio</option>
+                        <option value="Tecnico Administracao">Curso técnico em Administração</option>
+                        <option value="Tecnico Seguranca">Curso técnico em Segurança do Trabalho</option>
+                        <option value="Superior Logistica">Cursos superiores de Tecnologia em Logística</option>
+                    </select>
+                    <button type="submit" class="btn btn-primary">Entrar / Cadastrar</button>
+                    <button type="button" onclick="app.showScreen('initial-screen')" class="btn bg-gray-500 hover:bg-gray-600">Voltar</button>
+                </form>
+            </div>
+
+            <!-- Tela de Login do Supervisor -->
+            <div id="supervisor-login-screen" class="screen">
+                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6 text-center">Acesso do Supervisor</h2>
+                <form id="supervisor-login-form" class="space-y-4 max-w-md mx-auto">
+                    <input type="text" id="supervisor-login" placeholder="Login" class="input-field" required>
+                    <input type="password" id="supervisor-password" placeholder="Senha" class="input-field" required>
+                     <p id="supervisor-login-error" class="text-red-500 text-sm hidden">Credenciais inválidas.</p>
+                    <button type="submit" class="btn btn-primary">Entrar</button>
+                    <button type="button" onclick="app.showScreen('initial-screen')" class="btn bg-gray-500 hover:bg-gray-600">Voltar</button>
+                </form>
+            </div>
+
+            <!-- Tela Principal do Usuário -->
+            <div id="user-main-screen" class="screen">
+                <div id="user-map-container" class="hidden h-64 bg-gray-200 rounded-lg mb-4 shadow-inner">
+                    <div id="user-map" class="h-full w-full rounded-lg"></div>
+                </div>
+                <div id="trip-info-banner" class="hidden bg-ifba-green-dark text-white p-3 rounded-lg mb-4 text-center font-semibold">
+                    <p>Tempo de Viagem: <span id="trip-timer-display">00:00</span> | ETA: <span id="trip-eta-display">--:--</span></p>
+                </div>
+
+                <div id="user-action-panel" class="text-center">
+                    <h2 class="text-2xl font-bold text-ifba-green-dark mb-1">Olá, <span id="user-greeting-name"></span>!</h2>
+                    <p class="text-gray-600 mb-6">Pronto para começar sua viagem?</p>
+
+                    <div id="select-line-step" class="step">
+                        <h3 class="font-semibold text-lg mb-3">1. Selecione a Linha</h3>
+                        <select id="bus-line-select" class="input-field mb-2">
+                            <!-- Options will be populated by JS -->
+                        </select>
+                        <input type="text" id="bus-line-manual" class="input-field hidden" placeholder="Digite o código/nome da linha">
+                        <a href="#" onclick="app.toggleManualLineEntry()" class="text-sm text-ifba-green-dark hover:underline">Não encontrou sua linha?</a>
+                        <button onclick="app.startWait()" class="btn btn-primary mt-4">Iniciar Espera</button>
+                    </div>
+
+                    <div id="waiting-step" class="step hidden">
+                        <h3 class="font-semibold text-lg mb-3">2. Aguardando o ônibus...</h3>
+                        <div class="text-5xl font-bold text-ifba-accent-gold my-4" id="wait-timer-display">00:00</div>
+                        <p id="wait-eta-display" class="text-ifba-green-dark bg-green-100 p-2 rounded-lg hidden mb-4 font-semibold"></p>
+                        <p class="text-gray-500">Ponto de espera registrado via GPS.</p>
+                        <button onclick="app.startTrip()" class="btn btn-primary mt-4">Embarquei! Iniciar Viagem</button>
+                    </div>
+                    
+                    <div id="trip-step" class="step hidden">
+                         <h3 class="font-semibold text-lg mb-3">3. Viagem em andamento...</h3>
+                         <p class="text-gray-600 mb-4">O mapa acima mostra seu trajeto. Tenha uma boa viagem!</p>
+                         <button onclick="app.endTrip()" class="btn btn-danger">Desembarquei! Finalizar Viagem</button>
+                    </div>
+
+                    <div class="mt-8 border-t pt-6">
+                        <button onclick="app.showScreen('user-history-screen')" class="btn bg-gray-200 text-gray-700 hover:bg-gray-300">
+                            <i data-lucide="history" class="inline-block mr-2"></i> Histórico de Viagens
+                        </button>
+                         <button onclick="app.logout()" class="btn bg-red-100 text-red-700 hover:bg-red-200 mt-2">
+                            <i data-lucide="log-out" class="inline-block mr-2"></i> Sair
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tela de Histórico do Usuário -->
+            <div id="user-history-screen" class="screen">
+                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Histórico de Viagens</h2>
+                <div id="history-list" class="space-y-3">
+                    <!-- History items will be populated by JS -->
+                </div>
+                <button onclick="app.showScreen('user-main-screen')" class="btn bg-gray-500 hover:bg-gray-600 mt-6">Voltar</button>
+            </div>
+
+            <!-- Tela de Avaliação -->
+            <div id="evaluation-screen" class="screen">
+                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6 text-center">Avalie sua Viagem</h2>
+                <div id="evaluation-forms-container">
+                    <!-- Evaluation forms will be inserted here by JS -->
+                </div>
+                 <button onclick="app.submitEvaluation()" class="btn btn-primary mt-6">Finalizar Avaliação</button>
+            </div>
+
+            <!-- Dashboard do Supervisor -->
+            <div id="supervisor-dashboard-screen" class="screen">
+                <h2 class="text-3xl font-bold text-ifba-green-dark mb-6">Dashboard do Supervisor</h2>
+                <div class="flex justify-between items-center mb-6">
+                    <div class="flex space-x-2">
+                        <select id="supervisor-period-filter" class="input-field w-auto">
+                            <option value="daily">Diário</option>
+                            <option value="weekly">Semanal</option>
+                            <option value="biweekly">Quinzenal</option>
+                            <option value="monthly" selected>Mensal</option>
+                            <option value="semiannual">Semestral</option>
+                            <option value="annual">Anual</option>
+                            <option value="custom">Customizado</option>
+                        </select>
+                        <div id="custom-date-filter" class="hidden space-x-2">
+                            <input type="date" id="start-date" class="input-field w-auto">
+                            <input type="date" id="end-date" class="input-field w-auto">
+                        </div>
+                    </div>
+                     <button onclick="app.generatePDFReport()" class="btn btn-secondary px-4 py-2">
+                        <i data-lucide="file-down" class="inline-block mr-2"></i> Gerar PDF
+                    </button>
+                </div>
+                
+                <!-- Dashboard Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-gray-50 p-4 rounded-lg shadow-md md:col-span-2">
+                        <h3 class="font-semibold mb-2">Atrasos Médios por Linha (minutos)</h3>
+                        <canvas id="delay-chart"></canvas>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg shadow-md">
+                        <h3 class="font-semibold mb-2">Avaliação dos Pontos de Ônibus</h3>
+                        <canvas id="stop-rating-chart"></canvas>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg shadow-md">
+                        <h3 class="font-semibold mb-2">Lotação Média por Horário</h3>
+                        <canvas id="capacity-chart"></canvas>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg shadow-md">
+                        <h3 class="font-semibold mb-2">Ranking de Eficiência</h3>
+                        <div id="efficiency-ranking"></div>
+                    </div>
+                     <div class="bg-gray-50 p-4 rounded-lg shadow-md">
+                        <h3 class="font-semibold mb-2">Custo Médio Total por Viagem (R$)</h3>
+                        <canvas id="cost-chart"></canvas>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg shadow-md md:col-span-2">
+                        <h3 class="font-semibold mb-2">Causas Prováveis dos Atrasos</h3>
+                        <canvas id="delay-causes-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Botões de Ação -->
+                 <div class="mt-8 border-t pt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button onclick="app.showScreen('manage-lines-screen')" class="btn bg-ifba-green-light">
+                        <i data-lucide="bus" class="inline-block mr-2"></i> Gerenciar Linhas
+                    </button>
+                    <button onclick="app.showScreen('manage-logos-screen')" class="btn bg-ifba-green-light">
+                        <i data-lucide="image" class="inline-block mr-2"></i> Gerenciar Logos
+                    </button>
+                    <button onclick="app.showScreen('supervisor-profile-screen')" class="btn bg-ifba-green-light">
+                        <i data-lucide="key-round" class="inline-block mr-2"></i> Alterar Senha
+                    </button>
+                     <button onclick="app.logout()" class="btn btn-danger md:col-span-3">
+                        <i data-lucide="log-out" class="inline-block mr-2"></i> Sair
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tela de Gerenciamento de Linhas -->
+            <div id="manage-lines-screen" class="screen">
+                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Gerenciamento de Linhas</h2>
+                <div class="mb-6 p-4 border rounded-lg">
+                    <h3 class="font-semibold text-lg mb-3">Adicionar Nova Linha</h3>
+                    <div class="space-y-3">
+                        <input id="new-line-prefix" type="text" placeholder="Prefixo/Nome da Linha" class="input-field">
+                        <textarea id="new-line-route" placeholder="Rota Detalhada" class="input-field" rows="2"></textarea>
+                        <input id="new-line-schedule" type="text" placeholder="Horários (ex: 06:00, 07:30...)" class="input-field">
+                        <input id="new-line-cost" type="number" step="0.01" placeholder="Custo Aproximado (R$)" class="input-field">
+                        <button onclick="app.addNewLine()" class="btn btn-primary">Adicionar Manualmente</button>
+                    </div>
+                     <div class="mt-4 border-t pt-4">
+                        <h3 class="font-semibold mb-2">Importar em Massa</h3>
+                        <input type="file" id="import-file" accept=".csv,.txt" class="input-field">
+                        <button onclick="app.importLines()" class="btn btn-secondary mt-2">Importar de Arquivo</button>
+                    </div>
+                </div>
+                <div id="lines-list-container">
+                    <h3 class="font-semibold text-lg mb-3">Linhas Cadastradas</h3>
+                    <div id="lines-list" class="space-y-2">
+                        <!-- Lista de linhas será populada aqui -->
+                    </div>
+                </div>
+                 <button onclick="app.showScreen('supervisor-dashboard-screen')" class="btn bg-gray-500 hover:bg-gray-600 mt-6">Voltar</button>
+            </div>
+
+            <!-- Tela de Gerenciamento de Logos -->
+            <div id="manage-logos-screen" class="screen">
+                 <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Personalizar Logos</h2>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <div class="text-center">
+                         <h3 class="font-semibold text-lg mb-2">Logo Esquerdo</h3>
+                         <img id="logo-left-preview" src="https://placehold.co/200x80/EEEEEE/333333?text=Preview" alt="Preview Logo Esquerdo" class="mx-auto mb-4 border rounded-lg h-24">
+                         <input type="file" id="logo-left-upload" accept="image/*" class="input-field">
+                     </div>
+                     <div class="text-center">
+                         <h3 class="font-semibold text-lg mb-2">Logo Direito</h3>
+                         <img id="logo-right-preview" src="https://placehold.co/200x80/EEEEEE/333333?text=Preview" alt="Preview Logo Direito" class="mx-auto mb-4 border rounded-lg h-24">
+                         <input type="file" id="logo-right-upload" accept="image/*" class="input-field">
+                     </div>
+                 </div>
+                 <div class="mt-8 flex space-x-4">
+                    <button onclick="app.saveLogos()" class="btn btn-primary">Salvar Alterações</button>
+                    <button onclick="app.showScreen('supervisor-dashboard-screen')" class="btn bg-gray-500 hover:bg-gray-600">Voltar</button>
+                 </div>
+            </div>
+
+            <!-- Tela de Perfil/Troca de Senha do Supervisor -->
+            <div id="supervisor-profile-screen" class="screen">
+                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Perfil do Supervisor</h2>
+                <form id="supervisor-password-form" class="space-y-4 max-w-md mx-auto">
+                    <h3 class="font-semibold text-lg">Alterar Senha</h3>
+                    <input type="password" id="current-password" placeholder="Senha Atual" class="input-field" required>
+                    <input type="password" id="new-password" placeholder="Nova Senha" class="input-field" required>
+                    <input type="password" id="confirm-new-password" placeholder="Confirmar Nova Senha" class="input-field" required>
+                    <p id="password-change-error" class="text-red-500 text-sm hidden"></p>
+                    <p id="password-change-success" class="text-green-500 text-sm hidden">Senha alterada com sucesso!</p>
+                    <button type="submit" class="btn btn-primary">Salvar Nova Senha</button>
+                    <button type="button" onclick="app.showScreen('supervisor-dashboard-screen')" class="btn bg-gray-500 hover:bg-gray-600">Voltar</button>
+                </form>
+            </div>
+
+
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="connection-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 class="text-xl font-bold mb-4 text-ifba-green-dark">Desembarque Registrado!</h2>
+            <p class="mb-6 text-gray-700">Sua viagem incluirá uma conexão com outro ônibus?</p>
+            <div class="flex justify-around">
+                <button onclick="app.handleConnectionResponse(true)" class="btn btn-primary px-8">Sim</button>
+                <button onclick="app.handleConnectionResponse(false)" class="btn btn-secondary px-8">Não</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="summary-modal" class="modal-overlay hidden">
+         <div id="summary-content" class="modal-content !max-w-xl w-full">
+            <h2 class="text-2xl font-bold text-ifba-green-dark mb-4">Resumo da Viagem</h2>
+            <div class="grid grid-cols-2 gap-4 text-left">
+                <div class="bg-gray-100 p-3 rounded-lg">
+                    <p class="text-sm text-gray-500">Tempo de Espera</p>
+                    <p id="summary-wait-time" class="text-2xl font-bold text-ifba-accent-gold">00:00</p>
+                </div>
+                 <div class="bg-gray-100 p-3 rounded-lg">
+                    <p class="text-sm text-gray-500">Tempo de Viagem</p>
+                    <p id="summary-trip-time" class="text-2xl font-bold text-ifba-green-dark">00:00</p>
+                </div>
+                 <div class="bg-gray-100 p-3 rounded-lg col-span-2">
+                    <p class="text-sm text-gray-500">Tempo Total</p>
+                    <p id="summary-total-time" class="text-3xl font-bold text-ifba-green-light">00:00</p>
+                </div>
+                 <div class="bg-gray-100 p-3 rounded-lg">
+                    <p class="text-sm text-gray-500">Distância Percorrida</p>
+                    <p id="summary-distance" class="text-xl font-semibold">~0.0 km</p>
+                </div>
+                 <div class="bg-gray-100 p-3 rounded-lg">
+                    <p class="text-sm text-gray-500">Custo da Viagem</p>
+                    <p id="summary-cost" class="text-xl font-semibold">R$ 0,00</p>
+                </div>
+            </div>
+            <p class="text-xs text-gray-400 mt-4">Este resumo fechará automaticamente.</p>
+        </div>
+    </div>
+    
+    <script>
+    // Lucide Icons activation
+    lucide.createIcons();
+
+    const app = {
+        // STATE MANAGEMENT
+        state: {
+            currentUser: null,
+            currentScreen: 'initial-screen',
+            trip: {
+                isActive: false,
+                isWaiting: false,
+                startTime: null,
+                waitTime: 0,
+                waitStartTime: null,
+                tripStartTime: null,
+                legs: [], // To store each part of the journey { line, waitTime, tripTime, cost, distance }
+            },
+            timers: {
+                wait: null,
+                trip: null,
+            },
+            map: null,
+            busMarker: null,
+        },
+        
+        // DATABASE (Simulated with localStorage and in-memory data)
+        db: {
+            supervisorCreds: {
+                login: 'Logistica2025.1',
+                pass: '@#Log!20252'
+            },
+            busLines: [
+                { id: 1, name: "102 João Paulo II - Residencial Brisa da Serra", cost: 2.50 },
+                { id: 2, name: "106 Piranga", cost: 2.50 },
+                { id: 3, name: "200 Dom José Rodrigues", cost: 2.50 },
+                { id: 4, name: "202 Residencial Doutor Humberto Martins", cost: 2.50 },
+                { id: 5, name: "203 Kidé", cost: 2.50 },
+                { id: 6, name: "204 Circular Itaberaba", cost: 2.50 },
+                { id: 7, name: "205 Tancredo Neves - Castelo Branco", cost: 2.50 },
+                { id: 8, name: "206 Residencial Praia do Rodeadouro", cost: 2.50 },
+                { id: 9, name: "207 Residencial São Francisco", cost: 2.50 },
+                { id: 10, name: "208 Jardim Primavera", cost: 2.50 },
+                { id: 11, name: "209 Carnaíba do Sertão", cost: 2.50 },
+                { id: 12, name: "210 Rodeadouro", cost: 2.50 },
+                { id: 13, name: "211 Curral Novo - Sabiá", cost: 2.50 },
+                { id: 14, name: "401 Juazeiro - Petrolina via Centro", cost: 2.50 },
+                { id: 15, name: "402 Juazeiro - Petrolina / Areia Branca", cost: 2.50 },
+                { id: 16, name: "405 Juazeiro - Sobradinho", cost: 2.50 },
+                { id: 17, name: "414 Juazeiro - Petrolina - IF Sertão", cost: 2.50 },
+                { id: 18, name: "416 Juazeiro - Petrolina - Expresso", cost: 2.50 },
+                { id: 19, name: "420 Juá Garden - Petrolina - Areia Branca", cost: 2.50 },
+            ],
+            liveBuses: {}, // Simulates real-time data: { lineName: { lastBoardedTime: timestamp } }
+            
+            save(key, data) {
+                localStorage.setItem(`mobilis_${key}`, JSON.stringify(data));
+            },
+            load(key) {
+                const data = localStorage.getItem(`mobilis_${key}`);
+                return data ? JSON.parse(data) : null;
+            },
+        },
+
+        // INITIALIZATION
+        init() {
+            // Check for logged in user
+            this.state.currentUser = this.db.load('currentUser');
+            const storedLines = this.db.load('busLines');
+            if (storedLines) this.db.busLines = storedLines;
+            
+            const storedCreds = this.db.load('supervisorCreds');
+            if (storedCreds) {
+                this.db.supervisorCreds = storedCreds;
+            } else {
+                this.db.save('supervisorCreds', this.db.supervisorCreds);
+            }
+
+            const liveBusesData = this.db.load('liveBuses');
+            if (liveBusesData) {
+                this.db.liveBuses = liveBusesData;
+            }
+
+            if (this.state.currentUser) {
+                if(this.state.currentUser.type === 'supervisor'){
+                    this.showScreen('supervisor-dashboard-screen');
+                } else {
+                    this.showScreen('user-main-screen');
+                }
+            } else {
+                this.showScreen('initial-screen');
+            }
+
+            this.populateBusLines();
+            this.setupEventListeners();
+            console.log("Mobilis App Initialized");
+        },
+
+        // UI & NAVIGATION
+        showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active-screen');
+            });
+            document.getElementById(screenId).classList.add('active-screen');
+            this.state.currentScreen = screenId;
+            window.scrollTo(0, 0);
+
+            // Handle screen-specific logic
+            if (screenId === 'user-main-screen') {
+                this.updateUserUI();
+            } else if (screenId === 'supervisor-dashboard-screen') {
+                document.getElementById('supervisor-header').classList.remove('hidden');
+                document.getElementById('supervisor-header').classList.add('flex');
+                this.renderSupervisorDashboard();
+                this.loadLogos();
+            } else if (screenId === 'manage-lines-screen') {
+                this.renderLinesList();
+            } else if (screenId === 'user-history-screen') {
+                this.renderHistory();
+            }
+            
+            if(screenId !== 'supervisor-dashboard-screen') {
+                // hide supervisor header for non-supervisor screens
+                 if(!document.getElementById('supervisor-header').classList.contains('hidden')){
+                    document.getElementById('supervisor-header').classList.add('hidden');
+                    document.getElementById('supervisor-header').classList.remove('flex');
+                 }
+            }
+        },
+
+        setupEventListeners() {
+            document.getElementById('user-register-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleUserRegister();
+            });
+            document.getElementById('supervisor-login-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleSupervisorLogin();
+            });
+            document.getElementById('supervisor-password-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleChangeSupervisorPassword();
+            });
+             document.getElementById('supervisor-period-filter').addEventListener('change', (e) => {
+                document.getElementById('custom-date-filter').classList.toggle('hidden', e.target.value !== 'custom');
+                this.renderSupervisorDashboard();
+            });
+            ['start-date', 'end-date'].forEach(id => {
+                 document.getElementById(id).addEventListener('change', () => this.renderSupervisorDashboard());
+            });
+            ['logo-left-upload', 'logo-right-upload'].forEach(id => {
+                document.getElementById(id).addEventListener('change', (e) => this.previewLogo(e));
+            });
+        },
+        
+        // AUTHENTICATION
+        handleUserRegister() {
+            const fullname = document.getElementById('user-fullname').value;
+            const course = document.getElementById('user-course').value;
+            if (!fullname || !course) {
+                alert("Por favor, preencha todos os campos.");
+                return;
+            }
+            this.state.currentUser = { 
+                name: fullname, 
+                course: course, 
+                type: 'user',
+                history: this.state.currentUser?.history || [] 
+            };
+            this.db.save('currentUser', this.state.currentUser);
+            this.showScreen('user-main-screen');
+        },
+
+        handleSupervisorLogin() {
+            const login = document.getElementById('supervisor-login').value;
+            const pass = document.getElementById('supervisor-password').value;
+            const errorEl = document.getElementById('supervisor-login-error');
+            
+            const creds = this.db.supervisorCreds;
+
+            // DEBUG: Verifique o console do navegador (F12) para ver as credenciais esperadas.
+            // Se as "Credenciais esperadas" estiverem erradas, limpe o cache do seu navegador para este site.
+            console.log("Tentativa de login com:", { login: login, pass: pass });
+            console.log("Credenciais esperadas pelo sistema:", creds);
+
+            if (login === creds.login && pass === creds.pass) {
+                errorEl.classList.add('hidden');
+                this.state.currentUser = { name: 'Admin', type: 'supervisor' };
+                this.db.save('currentUser', this.state.currentUser);
+                this.showScreen('supervisor-dashboard-screen');
+            } else {
+                errorEl.classList.remove('hidden');
+            }
+        },
+
+        logout() {
+            this.state.currentUser = null;
+            this.state.trip = { isActive: false, isWaiting: false, legs: [] };
+            clearInterval(this.state.timers.wait);
+            clearInterval(this.state.timers.trip);
+            localStorage.removeItem('mobilis_currentUser');
+            this.showScreen('initial-screen');
+        },
+        
+        // USER TRIP FLOW
+        updateUserUI() {
+            if (!this.state.currentUser) return;
+            document.getElementById('user-greeting-name').textContent = this.state.currentUser.name.split(' ')[0];
+
+            document.getElementById('select-line-step').classList.toggle('hidden', this.state.trip.isWaiting || this.state.trip.isActive);
+            document.getElementById('waiting-step').classList.toggle('hidden', !this.state.trip.isWaiting);
+            document.getElementById('trip-step').classList.toggle('hidden', !this.state.trip.isActive);
+            
+            document.getElementById('user-map-container').classList.toggle('hidden', !this.state.trip.isActive);
+            document.getElementById('trip-info-banner').classList.toggle('hidden', !this.state.trip.isActive);
+
+            if (this.state.trip.isActive && !this.state.map) {
+                this.initMap();
+            }
+        },
+
+        populateBusLines() {
+            const select = document.getElementById('bus-line-select');
+            select.innerHTML = '<option value="" disabled selected>Escolha uma linha...</option>';
+            this.db.busLines.forEach(line => {
+                const option = document.createElement('option');
+                option.value = line.name;
+                option.textContent = line.name;
+                select.appendChild(option);
+            });
+        },
+
+        toggleManualLineEntry() {
+            const select = document.getElementById('bus-line-select');
+            const manual = document.getElementById('bus-line-manual');
+            select.classList.toggle('hidden');
+            manual.classList.toggle('hidden');
+            if (!manual.classList.contains('hidden')) {
+                manual.focus();
+            }
+        },
+
+        startWait() {
+            const selectedLine = document.getElementById('bus-line-select').value;
+            const manualLine = document.getElementById('bus-line-manual').value;
+            const line = manualLine || selectedLine;
+
+            if (!line) {
+                alert("Por favor, selecione ou informe uma linha de ônibus.");
+                return;
+            }
+            
+            const currentLeg = { line, cost: this.db.busLines.find(l => l.name === line)?.cost || 2.50 };
+            this.state.trip.legs.push(currentLeg);
+
+            // Check for live bus info from other users
+            const liveBusInfo = this.db.liveBuses[line];
+            const etaDisplay = document.getElementById('wait-eta-display');
+            // Check if last boarding was within a reasonable time (e.g., 20 minutes)
+            if (liveBusInfo && (Date.now() - liveBusInfo.lastBoardedTime < 20 * 60 * 1000)) {
+                const minutesAgo = Math.round((Date.now() - liveBusInfo.lastBoardedTime) / 60000);
+                if(minutesAgo === 0){
+                    etaDisplay.textContent = `Previsão: Um ônibus acabou de passar no último ponto registrado.`;
+                } else {
+                    etaDisplay.textContent = `Previsão: Um ônibus passou há ~${minutesAgo} min no último ponto registrado.`;
+                }
+                etaDisplay.classList.remove('hidden');
+            } else {
+                etaDisplay.classList.add('hidden');
+            }
+
+            // Get Geolocation
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    currentLeg.startCoords = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    console.log("Ponto de espera registrado:", currentLeg.startCoords);
+                }, () => {
+                    console.warn("Não foi possível obter a geolocalização. Continuando sem coordenadas.");
+                });
+            }
+
+            this.state.trip.isWaiting = true;
+            this.state.trip.waitStartTime = Date.now();
+            this.state.timers.wait = setInterval(() => this.updateTimer('wait'), 1000);
+            this.updateUserUI();
+        },
+
+        startTrip() {
+            clearInterval(this.state.timers.wait);
+            const leg = this.state.trip.legs[this.state.trip.legs.length - 1];
+            leg.waitTime = Math.round((Date.now() - this.state.trip.waitStartTime) / 1000);
+
+            // Update live bus status for other users to see
+            this.db.liveBuses[leg.line] = { lastBoardedTime: Date.now() };
+            this.db.save('liveBuses', this.db.liveBuses);
+
+            this.state.trip.isWaiting = false;
+            this.state.trip.isActive = true;
+            this.state.trip.tripStartTime = Date.now();
+            this.state.timers.trip = setInterval(() => this.updateTimer('trip'), 1000);
+            this.updateUserUI();
+        },
+
+        endTrip() {
+            clearInterval(this.state.timers.trip);
+            const leg = this.state.trip.legs[this.state.trip.legs.length - 1];
+            leg.tripTime = Math.round((Date.now() - this.state.trip.tripStartTime) / 1000);
+            leg.distance = Math.random() * 10 + 2; // Simulating distance
+
+            this.state.trip.isActive = false;
+            
+            if (this.state.map) {
+                this.state.map.remove();
+                this.state.map = null;
+            }
+
+            document.getElementById('connection-modal').classList.remove('hidden');
+        },
+        
+        handleConnectionResponse(isConnecting) {
+            document.getElementById('connection-modal').classList.add('hidden');
+            if (isConnecting) {
+                // Reset for the next leg, but keep trip data
+                this.state.trip.isWaiting = false;
+                this.state.trip.isActive = false;
+                document.getElementById('wait-timer-display').textContent = '00:00';
+                document.getElementById('trip-timer-display').textContent = '00:00';
+                this.updateUserUI();
+            } else {
+                // End of entire journey, go to evaluation
+                this.showScreen('evaluation-screen');
+                this.renderEvaluationForms();
+            }
+        },
+        
+        renderEvaluationForms() {
+            const container = document.getElementById('evaluation-forms-container');
+            container.innerHTML = ''; // Clear previous forms
+            const emojis = ['😡', '😠', '😐', '🙂', '😄', '🤩'];
+            const labels = ['Ruim', 'Insatisfeito', 'Razoável', 'Neutro', 'Satisfeito', 'Plenamente Satisfeito'];
+
+            const busCriteria = [
+                { id: 'limpeza', text: 'Limpeza do veículo' },
+                { id: 'tratamento', text: 'Tratamento do motorista/cobrador' },
+                { id: 'velocidade', text: 'Velocidade de tráfego' },
+                { id: 'lotacao', text: 'Lotação do ônibus' }
+            ];
+
+            const stopCriteria = [
+                { id: 'rampa_acesso', text: 'Rampa de acesso' },
+                { id: 'cobertura', text: 'Cobertura do ponto' },
+                { id: 'iluminacao', text: 'Iluminação' },
+                { id: 'piso_acessivel', text: 'Piso com acessibilidade' },
+                { id: 'sinalizacao', text: 'Sinalização' },
+                { id: 'seguranca', text: 'Segurança' }
+            ];
+
+            const createEvaluationSection = (criteria, legIndex, namePrefix) => {
+                return criteria.map(c => `
+                    <div class="mb-4">
+                        <label class="font-semibold text-gray-700">${c.text}</label>
+                        <div class="flex justify-between items-center mt-2 space-x-1">
+                            ${[...Array(6).keys()].map(i => `
+                                <label class="text-center cursor-pointer">
+                                    <input type="radio" name="${namePrefix}-${legIndex}-${c.id}" value="${i+1}" class="hidden peer">
+                                    <span class="text-3xl grayscale peer-checked:grayscale-0 transition-transform transform peer-checked:scale-125">${emojis[i]}</span>
+                                    <p class="text-xs text-gray-500">${labels[i]}</p>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            };
+            
+            this.state.trip.legs.forEach((leg, index) => {
+                const formHTML = `
+                <div class="mb-8 p-4 border rounded-lg bg-gray-50">
+                    <h3 class="font-bold text-lg text-ifba-green-dark mb-4">Avaliação do Ponto de Embarque (${leg.line})</h3>
+                    ${createEvaluationSection(stopCriteria, index, 'stop')}
+                </div>
+                <div class="mb-8 p-4 border rounded-lg bg-gray-50">
+                    <h3 class="font-bold text-lg text-ifba-green-dark mb-4">Avaliação do Ônibus (${leg.line})</h3>
+                    ${createEvaluationSection(busCriteria, index, 'bus')}
+                </div>
+                `;
+                container.innerHTML += formHTML;
+            });
+        },
+        
+        submitEvaluation() {
+            // In a real app, collect form data and send to a server
+            console.log("Avaliação submetida.");
+            this.finalizeTrip();
+        },
+
+        finalizeTrip() {
+            const totalWaitTime = this.state.trip.legs.reduce((sum, leg) => sum + leg.waitTime, 0);
+            const totalTripTime = this.state.trip.legs.reduce((sum, leg) => sum + leg.tripTime, 0);
+            const totalCost = this.state.trip.legs.reduce((sum, leg) => sum + leg.cost, 0);
+            const totalDistance = this.state.trip.legs.reduce((sum, leg) => sum + leg.distance, 0);
+
+            const tripSummary = {
+                date: new Date().toISOString(),
+                totalWaitTime,
+                totalTripTime,
+                totalCost,
+                totalDistance,
+                legs: this.state.trip.legs,
+            };
+
+            this.state.currentUser.history.unshift(tripSummary);
+            if (this.state.currentUser.history.length > 30) {
+                this.state.currentUser.history.pop();
+            }
+            this.db.save('currentUser', this.state.currentUser);
+
+            // Show summary modal
+            document.getElementById('summary-wait-time').textContent = this.formatTime(totalWaitTime);
+            document.getElementById('summary-trip-time').textContent = this.formatTime(totalTripTime);
+            document.getElementById('summary-total-time').textContent = this.formatTime(totalWaitTime + totalTripTime);
+            document.getElementById('summary-distance').textContent = `~${totalDistance.toFixed(1)} km`;
+            document.getElementById('summary-cost').textContent = `R$ ${totalCost.toFixed(2)}`;
+            document.getElementById('summary-modal').classList.remove('hidden');
+
+            setTimeout(() => {
+                document.getElementById('summary-modal').classList.add('hidden');
+                this.resetTripState();
+                this.showScreen('user-main-screen');
+            }, 5000); // Increased display time to 5s for readability
+        },
+
+        resetTripState() {
+             this.state.trip = {
+                isActive: false,
+                isWaiting: false,
+                startTime: null,
+                waitTime: 0,
+                waitStartTime: null,
+                tripStartTime: null,
+                legs: [],
+            };
+            document.getElementById('wait-timer-display').textContent = '00:00';
+            document.getElementById('trip-timer-display').textContent = '00:00';
+            this.updateUserUI();
+        },
+
+        renderHistory() {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = '';
+            if (!this.state.currentUser.history || this.state.currentUser.history.length === 0) {
+                historyList.innerHTML = '<p class="text-gray-500 text-center">Nenhuma viagem registrada.</p>';
+                return;
+            }
+            this.state.currentUser.history.forEach(trip => {
+                const tripDate = new Date(trip.date);
+                const item = document.createElement('div');
+                item.className = 'p-4 border rounded-lg bg-gray-50';
+                item.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="font-bold text-ifba-green-dark">${trip.legs.map(l => l.line).join(' + ')}</p>
+                            <p class="text-sm text-gray-500">${tripDate.toLocaleDateString('pt-BR')} - ${tripDate.toLocaleTimeString('pt-BR')}</p>
+                        </div>
+                        <div class="text-right">
+                           <p class="font-semibold">Total: ${this.formatTime(trip.totalWaitTime + trip.totalTripTime)}</p>
+                           <p class="text-sm">Custo: R$ ${trip.totalCost.toFixed(2)}</p>
+                        </div>
+                    </div>
+                `;
+                historyList.appendChild(item);
+            });
+        },
+        
+        // TIMERS & UTILITIES
+        updateTimer(type) {
+            const startTime = type === 'wait' ? this.state.trip.waitStartTime : this.state.trip.tripStartTime;
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const displayId = type === 'wait' ? 'wait-timer-display' : 'trip-timer-display';
+            document.getElementById(displayId).textContent = this.formatTime(elapsed);
+        },
+
+        formatTime(seconds) {
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = (seconds % 60).toString().padStart(2, '0');
+            return `${mins}:${secs}`;
+        },
+
+        // MAP FUNCTIONALITY (LeafletJS)
+        initMap() {
+            // Using IFBA Juazeiro coordinates
+            const ifbaCoords = [-9.450303676457963, -40.52378313230595];
+            this.state.map = L.map('user-map').setView(ifbaCoords, 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(this.state.map);
+
+            // Add IFBA marker
+            L.marker(ifbaCoords).addTo(this.state.map).bindPopup("<b>IFBA Juazeiro</b>").openPopup();
+            
+            // Simulate bus route
+            const startPoint = [-9.41, -40.52]; // Simulated starting point
+            this.state.busMarker = L.marker(startPoint).addTo(this.state.map);
+            const routeLine = L.polyline([startPoint, ifbaCoords]).addTo(this.state.map);
+            this.state.map.fitBounds(routeLine.getBounds());
+
+            // Simulate bus movement
+            let progress = 0;
+            const simulationInterval = setInterval(() => {
+                if (!this.state.trip.isActive) {
+                    clearInterval(simulationInterval);
+                    return;
+                }
+                progress += 0.01; // speed of simulation
+                if (progress > 1) progress = 1;
+                
+                const newLat = startPoint[0] + (ifbaCoords[0] - startPoint[0]) * progress;
+                const newLng = startPoint[1] + (ifbaCoords[1] - startPoint[1]) * progress;
+                this.state.busMarker.setLatLng([newLat, newLng]);
+                
+                const etaSeconds = (1 - progress) * 15 * 60; // Simulate 15 min trip
+                document.getElementById('trip-eta-display').textContent = this.formatTime(Math.round(etaSeconds));
+                
+                if (progress >= 1) clearInterval(simulationInterval);
+            }, 1000);
+        },
+        
+        handleChangeSupervisorPassword() {
+            const currentPass = document.getElementById('current-password').value;
+            const newPass = document.getElementById('new-password').value;
+            const confirmPass = document.getElementById('confirm-new-password').value;
+            const errorEl = document.getElementById('password-change-error');
+            const successEl = document.getElementById('password-change-success');
+
+            errorEl.classList.add('hidden');
+            successEl.classList.add('hidden');
+
+            if (currentPass !== this.db.supervisorCreds.pass) {
+                errorEl.textContent = "A senha atual está incorreta.";
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            if (newPass.length < 6) {
+                 errorEl.textContent = "A nova senha deve ter pelo menos 6 caracteres.";
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            if (newPass !== confirmPass) {
+                errorEl.textContent = "As novas senhas não coincidem.";
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            // Success
+            this.db.supervisorCreds.pass = newPass;
+            this.db.save('supervisorCreds', this.db.supervisorCreds);
+            successEl.classList.remove('hidden');
+            document.getElementById('supervisor-password-form').reset();
+        },
+
+        // SUPERVISOR FUNCTIONALITY
+        charts: {},
+        renderSupervisorDashboard() {
+            // DUMMY DATA FOR CHARTS - replace with real data processing
+            const labels = this.db.busLines.slice(0, 5).map(l => l.name.split(' ')[0]);
+            
+            // Define a color palette for the charts
+            const colorPalette = [
+                'rgba(47, 140, 86, 0.7)', // IFBA Green Light
+                'rgba(242, 163, 15, 0.7)', // IFBA Accent Gold
+                'rgba(28, 82, 64, 0.7)',   // IFBA Green Dark
+                'rgba(54, 162, 235, 0.7)', // Blue
+                'rgba(255, 99, 132, 0.7)', // Red
+                'rgba(153, 102, 255, 0.7)',// Purple
+            ];
+             const borderPalette = colorPalette.map(color => color.replace('0.7', '1'));
+
+            // --- Delay Chart Data & Logic ---
+            const delayValues = labels.map(() => Math.random() * 6); // Simulate delays from 0 to 6 mins
+            const delayStatusColors = delayValues.map(value => {
+                if (value < 1) return 'rgba(47, 140, 86, 0.7)';    // Green for Adiantado
+                if (value <= 3) return 'rgba(242, 163, 15, 0.7)'; // Gold for Pontual
+                return 'rgba(255, 99, 132, 0.7)';                 // Red for Atrasado
+            });
+            const delayStatusBorders = delayStatusColors.map(color => color.replace('0.7', '1'));
+
+            const delayData = {
+                labels,
+                datasets: [{
+                    label: 'Atraso Médio (min)',
+                    data: delayValues,
+                    backgroundColor: delayStatusColors,
+                    borderColor: delayStatusBorders,
+                    borderWidth: 1
+                }]
+            };
+            const delayChartOptions = {
+                scales: { 
+                    y: { 
+                        beginAtZero: true,
+                        ticks: {
+                            // Format y-axis labels to two decimal places with a comma
+                            callback: function(value) {
+                                return value.toFixed(2).replace('.', ',');
+                            }
+                        }
+                    } 
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                const value = context.parsed.y;
+                                if (value !== null) {
+                                    label += `${value.toFixed(2).replace('.', ',')} min`;
+                                    let status = '';
+                                    if (value < 1) status = ' (Adiantado)';
+                                    else if (value <= 3) status = ' (Pontual)';
+                                    else status = ' (Atrasado)';
+                                    label += status;
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                }
+            };
+
+            // --- Bus Stop Rating Chart ---
+            const stopRatingLabels = [
+                'Rampa de Acesso', 'Cobertura', 'Iluminação', 
+                'Piso Acessível', 'Sinalização', 'Segurança'
+            ];
+            const stopRatingData = {
+                labels: stopRatingLabels,
+                datasets: [{
+                    label: 'Avaliação Média (1-6)',
+                    data: stopRatingLabels.map(() => (Math.random() * 5 + 1)),
+                    backgroundColor: colorPalette,
+                }]
+            };
+            const stopRatingOptions = {
+                indexAxis: 'y', // Makes the bar chart horizontal
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 6,
+                        ticks: { stepSize: 1 }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'end',
+                        formatter: (value) => value.toFixed(1),
+                        color: '#1C5240',
+                        font: { weight: 'bold' }
+                    }
+                }
+            };
+            
+            // --- Other Charts Data ---
+            const capacityData = {
+                 labels: ['06-08h', '09-11h', '12-14h', '15-17h', '18-20h', '21-23h'],
+                datasets: [{
+                    label: 'Lotação Percebida (%)',
+                    data: [95, 60, 75, 55, 90, 40],
+                    backgroundColor: 'rgba(28, 82, 64, 0.7)',
+                    fill: true,
+                }]
+            };
+            const costData = {
+                labels,
+                datasets: [{
+                    label: 'Custo Médio (R$)',
+                    data: labels.map(() => (Math.random() * 1 + 2.5).toFixed(2)),
+                    backgroundColor: 'rgba(47, 140, 86, 0.7)',
+                    borderColor: 'rgba(47, 140, 86, 1)',
+                    borderWidth: 1,
+                }]
+            };
+
+            // --- Delay Causes Chart Data ---
+            const delayCausesData = {
+                labels: [
+                    'Congestionamento', 'Tempo de Embarque', 'Semáforos',
+                    'Redutores de Velocidade', 'Intervalos Longos', 'Manutenção/Quebra'
+                ],
+                datasets: [{
+                    label: '% de Contribuição',
+                    data: [35, 20, 15, 10, 10, 10], // Dummy percentages
+                    backgroundColor: colorPalette,
+                    borderColor: borderPalette,
+                    borderWidth: 1
+                }]
+            };
+            const delayCausesOptions = {
+                plugins: {
+                    legend: { position: 'top' },
+                    datalabels: {
+                        formatter: (value, ctx) => {
+                            const total = ctx.chart.data.datasets[0].data.reduce((acc, data) => acc + data, 0);
+                            const percentage = (value / total * 100).toFixed(1) + '%';
+                            return percentage;
+                        },
+                        color: '#fff',
+                        font: { weight: 'bold' }
+                    }
+                }
+            };
+
+
+            // --- Render all charts ---
+            this.renderChart('delay-chart', 'bar', delayData, delayChartOptions);
+            this.renderChart('stop-rating-chart', 'bar', stopRatingData, stopRatingOptions);
+            this.renderChart('capacity-chart', 'radar', capacityData, { elements: { line: { borderWidth: 3 } } });
+            this.renderChart('cost-chart', 'bar', costData, { scales: { y: { beginAtZero: true, ticks: { callback: (value) => `R$ ${value}` } } } });
+            this.renderChart('delay-causes-chart', 'pie', delayCausesData, delayCausesOptions);
+
+            // Efficiency Ranking
+            const efficiencyRanking = document.getElementById('efficiency-ranking');
+            efficiencyRanking.innerHTML = this.db.busLines.slice(5,9).sort((a,b) => Math.random() - 0.5)
+                .map((line, i) => `<div class="flex justify-between p-2 ${i % 2 === 0 ? 'bg-gray-100' : ''} rounded"><span>${i+1}. ${line.name.split(' ')[0]}</span> <span class="font-bold text-ifba-green-light">${(Math.random() * 10 + 88).toFixed(1)}%</span></div>`)
+                .join('');
+        },
+
+        renderChart(canvasId, type, data, options = {}) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            if (this.charts[canvasId]) {
+                this.charts[canvasId].destroy();
+            }
+
+            // Plugin to force a white background, ensuring proper PDF export
+            const customCanvasBackgroundColor = {
+                id: 'customCanvasBackgroundColor',
+                beforeDraw: (chart) => {
+                    const { ctx } = chart;
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'destination-over';
+                    ctx.fillStyle = '#FFFFFF';
+                    ctx.fillRect(0, 0, chart.width, chart.height);
+                    ctx.restore();
+                }
+            };
+
+            this.charts[canvasId] = new Chart(ctx, { 
+                type, 
+                data, 
+                options,
+                // When providing a plugins array, we need to explicitly include the datalabels plugin
+                // which is available globally as ChartDataLabels when loaded via script tag.
+                plugins: [ChartDataLabels, customCanvasBackgroundColor]
+            });
+        },
+
+        generatePDFReport() {
+            const { jsPDF } = window.jspdf;
+            // Alterado para orientação paisagem ('l')
+            const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
+            
+            const addHeader = (docInstance, title) => {
+                docInstance.setFontSize(18);
+                docInstance.setTextColor('#1C5240');
+                docInstance.text("Relatório de Desempenho - Mobilis", 14, 22);
+                docInstance.setFontSize(11);
+                docInstance.setTextColor(100);
+                docInstance.text(`Período: ${document.getElementById('supervisor-period-filter').selectedOptions[0].text}`, 14, 30);
+                
+                docInstance.setFontSize(14);
+                docInstance.setTextColor('#1C5240');
+                if (title) {
+                    docInstance.text(title, 14, 45);
+                }
+            };
+
+            // --- Página 1: Atrasos Médios ---
+            addHeader(doc, "Atrasos Médios por Linha (minutos)");
+            const delayChartImg = this.charts['delay-chart'].toBase64Image();
+            // Dimensões ajustadas para paisagem (A4: 297x210mm)
+            doc.addImage(delayChartImg, 'PNG', 14, 55, 269, 135);
+
+            // --- Página 2: Causas dos Atrasos ---
+            doc.addPage();
+            addHeader(doc, "Causas Prováveis dos Atrasos");
+            const causesChartImg = this.charts['delay-causes-chart'].toBase64Image();
+            const pieChartX = (297 - 150) / 2; // Centralizar o gráfico de pizza
+            doc.addImage(causesChartImg, 'PNG', pieChartX, 55, 150, 150);
+            
+            // --- Página 3: Outros Dashboards (Par 1) ---
+            doc.addPage();
+            addHeader(doc, "Indicadores de Desempenho (1/2)");
+            let currentX = 14;
+            let currentY = 55;
+            const chartWidth = 125;
+            const chartHeight = 90;
+            const xMargin = 18;
+
+            // Avaliação dos Pontos
+            const stopRatingChartImg = this.charts['stop-rating-chart'].toBase64Image();
+            doc.text("Avaliação dos Pontos", currentX, currentY - 5);
+            doc.addImage(stopRatingChartImg, 'PNG', currentX, currentY, chartWidth, chartHeight);
+
+            // Lotação Média
+            currentX += chartWidth + xMargin;
+            const capacityChartImg = this.charts['capacity-chart'].toBase64Image();
+            doc.text("Lotação Média por Horário", currentX, currentY - 5);
+            doc.addImage(capacityChartImg, 'PNG', currentX, currentY, chartWidth, chartHeight);
+            
+            // --- Página 4: Outros Dashboards (Par 2) ---
+            doc.addPage();
+            addHeader(doc, "Indicadores de Desempenho (2/2)");
+            currentX = 14; // Reset X
+            currentY = 55; // Reset Y
+            
+            // Custo Médio
+            const costChartImg = this.charts['cost-chart'].toBase64Image();
+            doc.text("Custo Médio por Viagem (R$)", currentX, currentY - 5);
+            doc.addImage(costChartImg, 'PNG', currentX, currentY, chartWidth, chartHeight);
+
+            // Ranking de Eficiência
+            currentX += chartWidth + xMargin;
+            doc.text("Ranking de Eficiência", currentX, currentY - 5);
+            const efficiencyRankingEl = document.getElementById('efficiency-ranking');
+            const rankingRows = Array.from(efficiencyRankingEl.querySelectorAll('div')).map(div => {
+                const spans = div.querySelectorAll('span');
+                return [spans[0].innerText, spans[1].innerText];
+            });
+
+            doc.autoTable({
+                startY: currentY,
+                head: [['Posição & Linha', 'Eficiência']],
+                body: rankingRows,
+                theme: 'striped',
+                headStyles: { fillColor: [28, 82, 64] },
+                margin: { left: currentX },
+                tableWidth: chartWidth,
+            });
+
+
+            doc.save(`relatorio_mobilis_${new Date().toISOString().slice(0,10)}.pdf`);
+        },
+        
+        renderLinesList() {
+            const container = document.getElementById('lines-list');
+            container.innerHTML = '';
+            this.db.busLines.forEach(line => {
+                const item = document.createElement('div');
+                item.className = 'p-3 border rounded-lg flex justify-between items-center bg-white';
+                item.innerHTML = `
+                    <span>${line.name}</span>
+                    <button onclick="app.removeLine(${line.id})" class="text-red-500 hover:text-red-700">
+                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    </button>
+                `;
+                container.appendChild(item);
+            });
+            lucide.createIcons();
+        },
+
+        addNewLine() {
+            const prefix = document.getElementById('new-line-prefix').value;
+            const cost = parseFloat(document.getElementById('new-line-cost').value);
+
+            if (!prefix || isNaN(cost)) {
+                alert("Prefixo da linha e custo são obrigatórios.");
+                return;
+            }
+            const newLine = {
+                id: Date.now(),
+                name: prefix,
+                cost: cost,
+                // other fields are ignored for simplicity
+            };
+            this.db.busLines.push(newLine);
+            this.db.save('busLines', this.db.busLines);
+            this.renderLinesList();
+            this.populateBusLines(); // update select dropdowns
+            
+            // Clear fields
+            document.getElementById('new-line-prefix').value = '';
+            document.getElementById('new-line-cost').value = '';
+            document.getElementById('new-line-route').value = '';
+            document.getElementById('new-line-schedule').value = '';
+        },
+        
+        removeLine(id) {
+            if(confirm('Tem certeza que deseja remover esta linha?')) {
+                this.db.busLines = this.db.busLines.filter(line => line.id !== id);
+                this.db.save('busLines', this.db.busLines);
+                this.renderLinesList();
+                this.populateBusLines();
+            }
+        },
+
+        importLines() {
+            const fileInput = document.getElementById('import-file');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert("Por favor, selecione um arquivo.");
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const text = event.target.result;
+                const lines = text.split('\n').filter(Boolean);
+                try {
+                    lines.forEach(line => {
+                        const [name, costStr] = line.split(',');
+                        if (name && !isNaN(parseFloat(costStr))) {
+                            this.db.busLines.push({ id: Date.now(), name: name.trim(), cost: parseFloat(costStr) });
+                        }
+                    });
+                    this.db.save('busLines', this.db.busLines);
+                    this.renderLinesList();
+                    this.populateBusLines();
+                    alert(`${lines.length} linhas importadas com sucesso!`);
+                } catch (e) {
+                    alert("Erro ao processar o arquivo. Certifique-se que está no formato: Nome da Linha,Custo");
+                }
+            };
+            reader.readAsText(file);
+        },
+
+        previewLogo(event) {
+            const input = event.target;
+            const previewId = input.id.includes('left') ? 'logo-left-preview' : 'logo-right-preview';
+            const preview = document.getElementById(previewId);
+            const file = input.files[0];
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    preview.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        },
+
+        saveLogos() {
+            const leftPreview = document.getElementById('logo-left-preview').src;
+            const rightPreview = document.getElementById('logo-right-preview').src;
+            
+            this.db.save('logoLeft', leftPreview);
+            this.db.save('logoRight', rightPreview);
+            
+            this.loadLogos();
+            alert("Logos salvos com sucesso!");
+        },
+
+        loadLogos() {
+            const logoLeft = this.db.load('logoLeft');
+            const logoRight = this.db.load('logoRight');
+            
+            if (logoLeft) {
+                document.getElementById('logo-left').src = logoLeft;
+                document.getElementById('logo-left-preview').src = logoLeft;
+            }
+            if (logoRight) {
+                document.getElementById('logo-right').src = logoRight;
+                document.getElementById('logo-right-preview').src = logoRight;
+            }
+        }
+    };
+
+    // Start the application
+    window.onload = () => app.init();
+
+    </script>
+</body>
+</html>
