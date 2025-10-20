@@ -19,7 +19,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
     <!-- Google Maps API -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places,routes" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places,routes,geometry" async defer></script>
 
     <!-- Firebase SDK -->
     <script type="module">
@@ -101,6 +101,14 @@
             --shadow-color: #c8870c; /* Darker gold */
             background-color: var(--ifba-accent-gold);
         }
+        .btn-red {
+            --shadow-color: #ab2424; /* Darker red */
+            background-color: var(--ifba-red-error);
+        }
+        .btn-purple {
+            --shadow-color: #380f6b; /* Darker purple */
+            background-color: #4a148c;
+        }
 
         /* Custom scrollbar */
         ::-webkit-scrollbar {
@@ -138,6 +146,12 @@
 
 <body class="bg-gray-50 text-gray-800">
 
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="fixed inset-0 bg-white bg-opacity-90 flex flex-col justify-center items-center z-[2000]">
+        <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-ifba-green-dark"></div>
+        <p class="mt-4 text-lg text-ifba-green-dark font-semibold">Conectando aos serviços...</p>
+    </div>
+
     <div id="app" class="max-w-4xl mx-auto p-4">
 
         <!-- Header Logos -->
@@ -151,7 +165,7 @@
             <!-- Initial Screen -->
             <div id="initial-screen">
                 <div class="text-center mb-8">
-                    <img src="mob.png" alt="Mobilis Logo" class="mx-auto w-48 mb-12">
+                    <img src="mob.png" alt="Mobilis Logo" class="mx-auto w-48 mb-4">
                     <h1 class="text-4xl font-bold text-ifba-green-dark">Mobilis</h1>
                     <p class="text-lg text-gray-600">Monitoramento de Transporte do IFBA Juazeiro</p>
                 </div>
@@ -159,12 +173,12 @@
                     <button onclick="showScreen('user-login-screen')" class="p-8 bg-white border border-gray-200 rounded-lg shadow-md hover:shadow-xl transition-shadow text-center">
                         <i data-lucide="user-round" class="w-16 h-16 mx-auto mb-4 text-ifba-green-dark"></i>
                         <h2 class="text-2xl font-semibold">Sou Estudante</h2>
-                        <p class="text-gray-500">Registrar e avaliar minhas viagens.</p>
+                        <p class="text-gray-500">Registar e avaliar as minhas viagens.</p>
                     </button>
                     <button onclick="showScreen('supervisor-login-screen')" class="p-8 bg-white border border-gray-200 rounded-lg shadow-md hover:shadow-xl transition-shadow text-center">
                         <i data-lucide="user-cog" class="w-16 h-16 mx-auto mb-4 text-ifba-green-dark"></i>
                         <h2 class="text-2xl font-semibold">Sou Supervisor</h2>
-                        <p class="text-gray-500">Acessar painel e relatórios.</p>
+                        <p class="text-gray-500">Aceder ao painel e relatórios.</p>
                     </button>
                 </div>
             </div>
@@ -175,14 +189,14 @@
                 <div id="user-auth-form">
                     <input type="text" id="userName" placeholder="Nome Completo" class="w-full p-3 mb-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-ifba-green-light outline-none">
                     <select id="userCourse" class="w-full p-3 mb-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-ifba-green-light outline-none bg-white">
-                        <option value="" disabled selected>Selecione seu Curso</option>
+                        <option value="" disabled selected>Selecione o seu Curso</option>
                         <option>Ensino Médio</option>
                         <option>Curso técnico em Administração</option>
                         <option>Curso técnico em Segurança do Trabalho</option>
                         <option>Cursos superiores de Tecnologia em Logística</option>
                     </select>
                     <p id="user-error" class="text-red-500 text-sm mb-4 hidden"></p>
-                    <button onclick="loginUser()" class="w-full p-3 rounded-md text-white font-semibold btn-3d btn-green">Entrar / Cadastrar</button>
+                    <button onclick="loginUser()" class="w-full p-3 rounded-md text-white font-semibold btn-3d btn-green">Entrar / Registar</button>
                 </div>
             </div>
 
@@ -206,7 +220,7 @@
                 <!-- Journey Steps -->
                 <div id="journey-start">
                     <h3 class="text-lg font-semibold mb-2">Iniciar Nova Viagem</h3>
-                    <p class="mb-4 text-gray-600">Selecione a linha de ônibus para começar.</p>
+                    <p class="mb-4 text-gray-600">Selecione a linha de autocarro para começar.</p>
                     <select id="bus-line-select" class="w-full p-3 mb-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-ifba-green-light outline-none bg-white">
                         <option value="" disabled selected>Selecione uma linha...</option>
                         <!-- Options will be populated by JS -->
@@ -215,12 +229,12 @@
                     <p id="bus-line-error" class="text-red-500 text-sm mb-4 hidden"></p>
                     <button onclick="startWaiting()" class="w-full p-4 rounded-md text-white font-bold text-lg btn-3d btn-green flex items-center justify-center gap-2">
                         <i data-lucide="timer"></i>
-                        Estou em espera do ônibus
+                        Estou à espera do autocarro
                     </button>
                 </div>
 
                 <div id="journey-waiting" class="hidden text-center">
-                    <h3 class="text-lg font-semibold mb-2">Aguardando ônibus...</h3>
+                    <h3 class="text-lg font-semibold mb-2">A aguardar o autocarro...</h3>
                     <p class="text-gray-600">Linha: <span id="waiting-bus-line" class="font-bold"></span></p>
                     <div class="my-6">
                         <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-ifba-green-dark mx-auto"></div>
@@ -241,7 +255,7 @@
                     
                      <!-- Map Area -->
                      <div id="map-container" class="w-full h-64 bg-gray-200 rounded-lg mb-4 border-2 border-ifba-green-dark">
-                         <div id="map" style="height: 100%; width: 100%;"></div>
+                         <div id="map" class="h-full w-full"></div>
                      </div>
                      <p class="text-center font-semibold text-lg mb-4">Tempo de viagem: <span id="trip-timer">00:00</span></p>
 
@@ -256,7 +270,7 @@
                     <h3 class="text-lg font-semibold mb-4 border-b-2 pb-2 border-ifba-green-light">Histórico de Viagens (Últimas 30)</h3>
                     <div id="history-list" class="space-y-3 max-h-96 overflow-y-auto pr-2">
                         <!-- History items will be populated by JS -->
-                        <p id="no-history-message" class="text-gray-500">Nenhuma viagem registrada ainda.</p>
+                        <p id="no-history-message" class="text-gray-500">Nenhuma viagem registada ainda.</p>
                     </div>
                 </div>
             </div>
@@ -264,8 +278,8 @@
             <!-- Connection Popup -->
             <div id="connection-popup" class="popup-overlay hidden">
                 <div class="bg-white p-8 rounded-lg shadow-2xl text-center w-full max-w-sm">
-                    <h3 class="text-xl font-bold text-ifba-green-dark mb-4">Haverá conexão?</h3>
-                    <p class="text-gray-600 mb-6">Você vai pegar outro ônibus para completar sua viagem?</p>
+                    <h3 class="text-xl font-bold text-ifba-green-dark mb-4">Haverá ligação?</h3>
+                    <p class="text-gray-600 mb-6">Vai apanhar outro autocarro para completar a sua viagem?</p>
                     <div class="flex justify-around">
                         <button onclick="handleConnection(true)" class="px-8 py-3 rounded-md text-white font-semibold btn-3d btn-green">Sim</button>
                         <button onclick="handleConnection(false)" class="px-8 py-3 rounded-md text-white font-semibold btn-3d btn-gold">Não</button>
@@ -275,23 +289,23 @@
 
             <!-- Rating Screen -->
             <div id="rating-screen" class="hidden bg-white p-8 rounded-lg shadow-lg">
-                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Avalie sua Viagem</h2>
+                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Avalie a sua Viagem</h2>
                 
                 <!-- Bus Stop Rating -->
                 <div class="mb-8">
-                    <h3 class="text-lg font-semibold mb-4 border-b pb-2">Ponto de Ônibus</h3>
+                    <h3 class="text-lg font-semibold mb-4 border-b pb-2">Paragem de Autocarro</h3>
                     <div class="space-y-4">
                         <div id="stop-rating-criteria"></div>
-                        <textarea id="stop-rating-comments" placeholder="Comentários adicionais sobre o ponto (opcional)" class="w-full p-2 border rounded-md" rows="2"></textarea>
+                        <textarea id="stop-rating-comments" placeholder="Comentários adicionais sobre a paragem (opcional)" class="w-full p-2 border rounded-md" rows="2"></textarea>
                     </div>
                 </div>
 
                 <!-- Bus Rating -->
                 <div>
-                    <h3 class="text-lg font-semibold mb-4 border-b pb-2">Ônibus</h3>
+                    <h3 class="text-lg font-semibold mb-4 border-b pb-2">Autocarro</h3>
                     <div class="space-y-4">
                          <div id="bus-rating-criteria"></div>
-                         <textarea id="bus-rating-comments" placeholder="Comentários adicionais sobre o ônibus (opcional)" class="w-full p-2 border rounded-md" rows="2"></textarea>
+                         <textarea id="bus-rating-comments" placeholder="Comentários adicionais sobre o autocarro (opcional)" class="w-full p-2 border rounded-md" rows="2"></textarea>
                     </div>
                 </div>
                 <p id="rating-error" class="text-red-500 text-sm mt-4 hidden"></p>
@@ -323,13 +337,13 @@
                         <p id="summary-cost" class="text-2xl font-bold">R$ --,--</p>
                     </div>
                 </div>
-                <p class="mt-6 text-gray-500 text-sm">Esta tela fechará em <span id="summary-countdown">30</span>s.</p>
+                <p class="mt-6 text-gray-500 text-sm">Este ecrã fechará em <span id="summary-countdown">30</span>s.</p>
             </div>
 
             <!-- Supervisor Dashboard -->
             <div id="supervisor-dashboard" class="hidden">
                  <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-bold text-ifba-green-dark">Dashboard do Supervisor</h2>
+                    <h2 class="text-2xl font-bold text-ifba-green-dark">Painel do Supervisor</h2>
                      <div>
                         <button onclick="showScreen('supervisor-password-change')" class="text-sm text-blue-600 hover:underline mr-4">Trocar Senha</button>
                         <button onclick="logout()" class="text-sm text-red-600 hover:underline">Sair</button>
@@ -348,10 +362,10 @@
                             <option value="annual">Anual</option>
                         </select>
                         <button onclick="generatePDFReport()" class="p-2 rounded-md text-white btn-3d btn-green flex items-center gap-1"><i data-lucide="file-down"></i>Gerar PDF</button>
-                        <button onclick="showScreen('manage-lines-screen')" class="p-2 rounded-md text-white btn-3d btn-gold flex items-center gap-1"><i data-lucide="bus"></i>Gerenciar Linhas</button>
-                        <button onclick="showScreen('manage-logos-screen')" class="p-2 rounded-md text-white btn-3d btn-gold flex items-center gap-1"><i data-lucide="image"></i>Gerenciar Logos</button>
-                         <button id="clear-history-btn" onclick="confirmClearHistories()" class="p-2 rounded-md text-white bg-red-600 hover:bg-red-700 flex items-center gap-1" style="box-shadow: 0 4px 0 0 #ab2424;"><i data-lucide="trash-2"></i>Limpar Históricos</button>
-                         <button onclick="generateAISummary()" class="p-2 rounded-md text-white btn-3d btn-green flex items-center gap-1" style="background-color: #4a148c; --shadow-color: #380f6b;">✨ Gerar Resumo com IA</button>
+                        <button onclick="showScreen('manage-lines-screen')" class="p-2 rounded-md text-white btn-3d btn-gold flex items-center gap-1"><i data-lucide="bus"></i>Gerir Linhas</button>
+                        <button onclick="showScreen('manage-logos-screen')" class="p-2 rounded-md text-white btn-3d btn-gold flex items-center gap-1"><i data-lucide="image"></i>Gerir Logos</button>
+                         <button id="clear-history-btn" onclick="confirmClearHistories()" class="p-2 rounded-md text-white flex items-center gap-1 btn-3d btn-red"><i data-lucide="trash-2"></i>Limpar Históricos</button>
+                         <button onclick="generateAISummary()" class="p-2 rounded-md text-white flex items-center gap-1 btn-3d btn-purple">✨ Gerar Resumo com IA</button>
                     </div>
                 </div>
 
@@ -359,7 +373,7 @@
                 <div id="ai-summary-box" class="hidden bg-purple-50 border-l-4 border-purple-500 text-purple-800 p-4 rounded-md mb-6 shadow">
                     <h3 class="font-bold mb-2 flex items-center gap-2"><i data-lucide="sparkles"></i>Resumo da Inteligência Artificial</h3>
                     <div id="ai-summary-content" class="text-sm space-y-2">
-                        <p class="animate-pulse">Analisando dados e gerando insights...</p>
+                        <p class="animate-pulse">A analisar dados e a gerar insights...</p>
                     </div>
                 </div>
 
@@ -380,11 +394,11 @@
                         <canvas id="occupancy-chart"></canvas>
                     </div>
                     <div class="lg:col-span-2 bg-white p-4 rounded-lg shadow">
-                         <h3 class="font-semibold mb-2">Avaliação Média dos Itens dos Pontos de Ônibus</h3>
+                         <h3 class="font-semibold mb-2">Avaliação Média dos Itens das Paragens de Autocarro</h3>
                          <canvas id="stop-items-chart"></canvas>
                     </div>
                     <div class="bg-white p-4 rounded-lg shadow">
-                        <h3 class="font-semibold mb-2">Avaliação Média dos Ônibus</h3>
+                        <h3 class="font-semibold mb-2">Avaliação Média dos Autocarros</h3>
                         <canvas id="bus-rating-chart"></canvas>
                     </div>
                     <div class="bg-white p-4 rounded-lg shadow">
@@ -404,7 +418,7 @@
 
              <!-- Supervisor: Manage Lines Screen -->
             <div id="manage-lines-screen" class="hidden bg-white p-8 rounded-lg shadow-lg">
-                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Gerenciar Linhas de Ônibus</h2>
+                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Gerir Linhas de Autocarro</h2>
                 
                 <div class="mb-6">
                     <h3 class="text-lg font-semibold mb-2">Adicionar Nova Linha</h3>
@@ -417,15 +431,15 @@
                  <div class="mb-6">
                     <h3 class="text-lg font-semibold mb-2">Importar Linhas (CSV/TXT)</h3>
                     <input type="file" id="importFile" accept=".csv,.txt" class="w-full p-2 border rounded-md">
-                    <button onclick="importLines()" class="w-full mt-2 p-2 rounded-md text-white btn-3d btn-gold">Importar Arquivo</button>
+                    <button onclick="importLines()" class="w-full mt-2 p-2 rounded-md text-white btn-3d btn-gold">Importar Ficheiro</button>
                  </div>
 
-                <h3 class="text-lg font-semibold mb-2">Linhas Cadastradas</h3>
+                <h3 class="text-lg font-semibold mb-2">Linhas Registadas</h3>
                 <div id="lines-list" class="space-y-2 max-h-60 overflow-y-auto">
                     <!-- Lines list populated by JS -->
                 </div>
                 
-                <button onclick="showScreen('supervisor-dashboard')" class="mt-6 p-3 rounded-md text-ifba-green-dark font-semibold border-2 border-ifba-green-dark hover:bg-gray-100 w-full">Voltar ao Dashboard</button>
+                <button onclick="showScreen('supervisor-dashboard')" class="mt-6 p-3 rounded-md text-ifba-green-dark font-semibold border-2 border-ifba-green-dark hover:bg-gray-100 w-full">Voltar ao Painel</button>
             </div>
 
             <!-- Supervisor: Change Password Screen -->
@@ -436,13 +450,13 @@
                  <input type="password" id="confirmNewSupervisorPassword" placeholder="Confirmar Nova Senha" class="w-full p-3 mb-4 border border-gray-300 rounded-md">
                  <p id="password-change-error" class="text-red-500 text-sm mb-4 hidden"></p>
                  <p id="password-change-success" class="text-green-600 text-sm mb-4 hidden"></p>
-                 <button onclick="changeSupervisorPassword()" class="w-full p-3 rounded-md text-white font-semibold btn-3d btn-green">Salvar Nova Senha</button>
+                 <button onclick="changeSupervisorPassword()" class="w-full p-3 rounded-md text-white font-semibold btn-3d btn-green">Guardar Nova Senha</button>
                  <button onclick="showScreen('supervisor-dashboard')" class="mt-4 w-full text-center text-gray-600 hover:underline">Voltar</button>
             </div>
 
             <!-- Supervisor: Manage Logos Screen -->
             <div id="manage-logos-screen" class="hidden bg-white p-8 rounded-lg shadow-lg">
-                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Gerenciar Logos</h2>
+                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Gerir Logos</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <h3 class="text-lg font-semibold mb-2">Logo Esquerdo</h3>
@@ -455,7 +469,7 @@
                         <img id="logoRightPreview" src="https://placehold.co/200x70?text=Preview" alt="Preview Logo Direito" class="w-full border p-2 rounded-md">
                     </div>
                 </div>
-                <button onclick="saveLogos()" class="w-full mt-6 p-3 rounded-md text-white font-semibold btn-3d btn-green">Salvar Logos</button>
+                <button onclick="saveLogos()" class="w-full mt-6 p-3 rounded-md text-white font-semibold btn-3d btn-green">Guardar Logos</button>
                 <button onclick="showScreen('supervisor-dashboard')" class="mt-4 w-full text-center text-gray-600 hover:underline">Voltar</button>
             </div>
             
@@ -478,13 +492,13 @@
         db: null,
         auth: null,
         userId: null,
+        isAuthReady: false,
     };
     
-    // IFBA Campus Coordinates
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
     const IFBA_CAMPUS_COORDS = { lat: -9.450303676457963, lng: -40.52378313230595 };
 
     // --- Firebase Initialization ---
-    // IMPORTANT: Replace with your actual Firebase config
     const firebaseConfig = {
         apiKey: "YOUR_API_KEY",
         authDomain: "YOUR_AUTH_DOMAIN",
@@ -495,7 +509,6 @@
     };
 
     function initializeFirebase() {
-        // In a real environment, __firebase_config would be provided.
         const effectiveConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
         
         try {
@@ -506,41 +519,53 @@
             setupAuthListener();
         } catch (error) {
             console.error("Firebase initialization failed:", error);
-            // Show an error to the user that the app cannot connect to its services.
+            document.getElementById('loading-overlay').classList.add('hidden');
+            alert("Erro crítico: Não foi possível conectar aos serviços da aplicação.");
         }
     }
 
     async function setupAuthListener() {
+        const loadingOverlay = document.getElementById('loading-overlay');
         window.firebase.onAuthStateChanged(appState.auth, async (user) => {
-            if (user) {
-                appState.userId = user.uid;
-                console.log("User is signed in with UID:", appState.userId);
-                // If the user has a profile, load it.
-                const userDoc = await window.firebase.getDoc(window.firebase.doc(appState.db, "users", appState.userId));
-                if (userDoc.exists()) {
-                    appState.currentUser = userDoc.data();
-                    if (appState.currentUser.profile === 'student') {
-                        setupUserInterface(appState.currentUser.name);
-                        loadUserHistory();
+            try {
+                if (user) {
+                    appState.userId = user.uid;
+                    appState.isAuthReady = true;
+                    console.log("Authentication ready. User UID:", appState.userId);
+                    
+                    const userDocRef = window.firebase.doc(appState.db, "artifacts", appId, "users", appState.userId);
+                    const userDoc = await window.firebase.getDoc(userDocRef);
+
+                    if (userDoc.exists()) {
+                        appState.currentUser = userDoc.data();
+                        if (appState.currentUser.profile === 'student') {
+                            setupUserInterface(appState.currentUser.name);
+                        }
                     }
+                } else {
+                    appState.currentUser = null;
+                    appState.userId = null;
+                    appState.isAuthReady = false;
+                    console.log("User is signed out.");
+                    showScreen('initial-screen');
                 }
-            } else {
-                console.log("User is signed out.");
-                appState.currentUser = null;
-                appState.userId = null;
-                showScreen('initial-screen');
+            } catch (error) {
+                console.error("Error during auth state change:", error);
+            } finally {
+                loadingOverlay.classList.add('hidden');
             }
         });
 
-        // Sign in automatically (for this demo app context)
         try {
-             if (typeof __initial_auth_token !== 'undefined') {
+             if (typeof __initial_auth_token !== 'undefined' && !appState.auth.currentUser) {
                 await window.firebase.signInWithCustomToken(appState.auth, __initial_auth_token);
-             } else {
+             } else if (!appState.auth.currentUser) {
                 await window.firebase.signInAnonymously(appState.auth);
              }
         } catch (error) {
-            console.error("Anonymous sign-in failed:", error);
+            console.error("Automatic sign-in failed:", error);
+            alert("Não foi possível iniciar uma sessão segura. Tente recarregar a página.");
+            loadingOverlay.classList.add('hidden');
         }
     }
 
@@ -581,12 +606,12 @@
             { id: 'cleanliness', label: 'Limpeza do veículo' },
             { id: 'driver_treatment', label: 'Tratamento do motorista/cobrador' },
             { id: 'traffic_speed', label: 'Velocidade de tráfego' },
-            { id: 'crowding', label: 'Lotação do ônibus' }
+            { id: 'crowding', label: 'Lotação do autocarro' }
         ],
         stop: [
             { id: 'access_ramp', label: 'Rampa de acesso' },
-            { id: 'coverage', label: 'Cobertura do ponto' },
-            { id: 'lighting', label: 'Iluminação do ponto' },
+            { id: 'coverage', label: 'Cobertura da paragem' },
+            { id: 'lighting', label: 'Iluminação da paragem' },
             { id: 'accessible_floor', label: 'Piso com acessibilidade' },
             { id: 'signaling', label: 'Sinalização' },
             { id: 'security', label: 'Segurança' }
@@ -594,7 +619,7 @@
     };
 
     const ratingOptions = [
-        { value: 1, label: 'Ruim', emoji: '😠' },
+        { value: 1, label: 'Péssimo', emoji: '😠' },
         { value: 2, label: 'Insatisfeito', emoji: '😞' },
         { value: 3, label: 'Razoável', emoji: '😐' },
         { value: 4, label: 'Neutro', emoji: '🙂' },
@@ -644,18 +669,24 @@
             errorEl.classList.remove('hidden');
             return;
         }
+
+        if (!appState.isAuthReady || !appState.userId) {
+            errorEl.textContent = 'Aguardando autenticação... Tente novamente em um instante.';
+            errorEl.classList.remove('hidden');
+            return;
+        }
         errorEl.classList.add('hidden');
 
         appState.currentUser = { name, course, profile: 'student' };
         
-        // Save user profile to Firestore
         try {
-            await window.firebase.setDoc(window.firebase.doc(appState.db, "users", appState.userId), appState.currentUser);
-            console.log("User profile saved.");
+            const userDocRef = window.firebase.doc(appState.db, "artifacts", appId, "users", appState.userId);
+            await window.firebase.setDoc(userDocRef, appState.currentUser);
+            console.log("User profile saved for UID:", appState.userId);
             setupUserInterface(name);
         } catch (error) {
             console.error("Error saving user profile: ", error);
-            errorEl.textContent = 'Erro ao salvar perfil. Tente novamente.';
+            errorEl.textContent = 'Erro ao guardar o perfil. Verifique a sua conexão e tente novamente.';
             errorEl.classList.remove('hidden');
         }
     }
@@ -671,10 +702,6 @@
         const password = document.getElementById('supervisorPassword').value;
         const errorEl = document.getElementById('supervisor-error');
         
-        // This should be replaced with a secure server-side check
-        console.log("Attempting login with:", { login, password });
-        console.log("Expected credentials:", { login: "Logistica2025.1", password: "@#Log!20252" });
-
         if (login === 'Logistica2025.1' && password === '@#Log!20252') {
             errorEl.classList.add('hidden');
             appState.currentUser = { name: 'Supervisor', profile: 'supervisor' };
@@ -689,13 +716,10 @@
 
     function logout() {
         appState.currentUser = null;
-        // In a real app with proper auth, you'd call signOut here.
-        // window.firebase.signOut(appState.auth);
         clearInterval(appState.tripInterval);
         clearInterval(appState.waitingInterval);
         clearTimeout(appState.summaryTimeout);
         showScreen('initial-screen');
-         // Hide supervisor logos when logging out
         document.getElementById('supervisorLogoLeft').classList.add('hidden');
         document.getElementById('supervisorLogoRight').classList.add('hidden');
     }
@@ -704,14 +728,14 @@
     function getCurrentLocation() {
         return new Promise((resolve, reject) => {
             if (!navigator.geolocation) {
-                reject(new Error('Geolocalização não é suportada pelo seu navegador.'));
+                reject(new Error('A geolocalização não é suportada pelo seu navegador.'));
             } else {
                 navigator.geolocation.getCurrentPosition(
                     position => resolve({
                         lat: position.coords.latitude,
                         lng: position.coords.longitude
                     }),
-                    () => reject(new Error('Não foi possível obter sua localização.'))
+                    () => reject(new Error('Não foi possível obter a sua localização.'))
                 );
             }
         });
@@ -726,7 +750,6 @@
         if (selectedLineId) {
             line = busLines.find(l => l.id == selectedLineId);
         } else if (manualLine) {
-            // Simple logic for manual entry, could be improved
             line = { id: `manual_${Date.now()}`, prefix: manualLine, route: 'Rota manual', cost: 2.50 };
         }
 
@@ -780,22 +803,16 @@
         const etaInfo = document.getElementById('eta-info');
         const etaMessage = document.getElementById('eta-message');
         etaInfo.classList.add('hidden');
+        
+        if (!appState.isAuthReady) { return; }
 
         try {
-            // Check Firestore for a recent "start_trip" event on the same line
-            const q = window.firebase.query(
-                window.firebase.collection(appState.db, "realtime_bus"),
-                window.firebase.where("lineId", "==", lineId)
-            );
+            const realtimeCollRef = window.firebase.collection(appState.db, "artifacts", appId, "public", "data", "realtime_bus");
+            const q = window.firebase.query(realtimeCollRef, window.firebase.where("lineId", "==", lineId));
             const querySnapshot = await window.firebase.getDocs(q);
 
             if (!querySnapshot.empty) {
                 const busDoc = querySnapshot.docs[0].data();
-                const lastSeenTime = new Date(busDoc.timestamp);
-                const now = new Date();
-                const diffMinutes = Math.round((now - lastSeenTime) / (1000 * 60));
-                
-                // Use Google Maps to calculate ETA from last known bus position to user
                 const userLocation = await getCurrentLocation();
                 
                 const directionsService = new google.maps.DirectionsService();
@@ -806,22 +823,21 @@
                 };
 
                 directionsService.route(request, (result, status) => {
-                    if (status == 'OK') {
+                    if (status == 'OK' && result.routes.length > 0) {
                         const eta = result.routes[0].legs[0].duration.text;
-                         etaMessage.textContent = `Previsão de chegada: ${eta}. (Ônibus passou por um ponto há ${diffMinutes} min).`;
-                         etaInfo.classList.remove('hidden');
-                    } else {
-                        etaMessage.textContent = `Um ônibus desta linha passou por um ponto próximo há ${diffMinutes} minuto(s).`;
+                        const lastSeenTime = new Date(busDoc.timestamp);
+                        const now = new Date();
+                        const diffMinutes = Math.round((now - lastSeenTime) / (1000 * 60));
+                        etaMessage.textContent = `Previsão de chegada: ${eta}. (Baseado num autocarro que passou por um ponto próximo há ${diffMinutes} min).`;
                         etaInfo.classList.remove('hidden');
                     }
                 });
             } else {
-                 etaMessage.textContent = 'Aguardando informações de outros usuários para estimar a chegada.';
+                 etaMessage.textContent = 'A aguardar informações de outros utilizadores para estimar a chegada.';
                  etaInfo.classList.remove('hidden');
             }
         } catch (error) {
             console.error("Error checking ETA:", error);
-            etaInfo.classList.add('hidden');
         }
     }
 
@@ -829,6 +845,11 @@
     async function startTrip() {
         clearInterval(appState.waitingInterval);
         
+        if (!appState.isAuthReady || !appState.userId) {
+            alert("A conexão com os serviços ainda não está pronta. Tente novamente em um instante.");
+            return;
+        }
+
         try {
             const location = await getCurrentLocation();
             appState.currentTrip.events.push({
@@ -838,8 +859,8 @@
             });
             appState.currentTrip.status = 'in_progress';
             
-            // Update realtime_bus location in Firestore
-            await window.firebase.setDoc(window.firebase.doc(appState.db, "realtime_bus", appState.currentTrip.lineId.toString()), {
+            const busDocRef = window.firebase.doc(appState.db, "artifacts", appId, "public", "data", "realtime_bus", appState.currentTrip.lineId.toString());
+            await window.firebase.setDoc(busDocRef, {
                 lineId: appState.currentTrip.lineId,
                 location: { lat: location.lat, lng: location.lng },
                 timestamp: new Date().toISOString()
@@ -861,14 +882,18 @@
 
         } catch(error) {
             alert('Erro ao iniciar a viagem: ' + error.message);
-            // Revert to waiting screen or start screen
             showScreen('journey-start');
         }
     }
     
     function initializeMap(startLocation) {
         if (appState.map) {
-             appState.map.remove();
+             try { appState.map.remove(); } catch(e) { console.warn("Could not remove map cleanly."); }
+        }
+        
+        if (!window.google || !window.google.maps || !window.google.maps.geometry) {
+            document.getElementById('map').innerHTML = '<p class="text-center p-4 text-red-600">Erro ao carregar o mapa. Verifique a chave da API do Google Maps.</p>';
+            return;
         }
 
         const mapElement = document.getElementById('map');
@@ -878,14 +903,12 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(appState.map);
 
-        // User and IFBA markers
-        const userIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448653.png', iconSize: [38, 38] });
-        appState.busMarker = L.marker([startLocation.lat, startLocation.lng], { icon: userIcon }).addTo(appState.map).bindPopup("Você está aqui!");
+        const busIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448653.png', iconSize: [38, 38] });
+        appState.busMarker = L.marker([startLocation.lat, startLocation.lng], { icon: busIcon }).addTo(appState.map).bindPopup("Autocarro");
 
         const ifbaIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/9906/9906517.png', iconSize: [38, 38] });
         L.marker([IFBA_CAMPUS_COORDS.lat, IFBA_CAMPUS_COORDS.lng], { icon: ifbaIcon }).addTo(appState.map).bindPopup("IFBA Campus Juazeiro");
 
-        // Use Google Maps Directions API to get route
         const directionsService = new google.maps.DirectionsService();
         const request = {
             origin: new google.maps.LatLng(startLocation.lat, startLocation.lng),
@@ -894,12 +917,8 @@
         };
 
         directionsService.route(request, (result, status) => {
-            if (status == 'OK') {
+            if (status == 'OK' && result.routes.length > 0) {
                 const route = result.routes[0];
-                const eta = route.legs[0].duration.text;
-                // Add ETA info to UI if needed
-
-                // Decode polyline and draw on Leaflet map
                 const latlngs = google.maps.geometry.encoding.decodePath(route.overview_polyline).map(p => [p.lat(), p.lng()]);
                 
                 if (appState.routePolyline) {
@@ -911,18 +930,6 @@
                 console.error('Directions request failed due to ' + status);
             }
         });
-        
-         // Dynamically update route - This is a simulation. A real app would get live bus data.
-        let routeUpdateInterval = setInterval(() => {
-            navigator.geolocation.getCurrentPosition(position => {
-                 const newLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
-                 if (appState.busMarker) {
-                     appState.busMarker.setLatLng(newLocation);
-                     appState.map.panTo(newLocation);
-                 }
-                 // Recalculate route/ETA
-            });
-        }, 10000); // Update every 10 seconds
     }
 
 
@@ -931,27 +938,27 @@
         appState.currentTrip.events.push({
             type: 'end_trip',
             timestamp: new Date().toISOString(),
-            location: null // Location is optional on arrival
+            location: null
         });
         appState.currentTrip.status = 'ended';
-        showScreen('connection-popup');
+        document.getElementById('connection-popup').classList.remove('hidden');
     }
 
     function handleConnection(willConnect) {
+        document.getElementById('connection-popup').classList.add('hidden');
         if (willConnect) {
-            // Save current leg of the trip and start a new one
             saveTripToHistory();
-            resetJourney(true); // isConnection = true
+            resetJourney(true);
         } else {
-            // End of journey, proceed to rating
             showScreen('rating-screen');
         }
     }
     
     function resetJourney(isConnection = false) {
-        appState.currentTrip = null;
+        if (!isConnection) appState.currentTrip = null;
+
         if (appState.map) {
-            appState.map.remove();
+            try { appState.map.remove(); } catch(e) {}
             appState.map = null;
         }
         clearInterval(appState.waitingInterval);
@@ -968,16 +975,13 @@
     }
 
     async function startWaitingFromConnection() {
-        // A simplified version of startWaiting, just showing the UI
         try {
-            const location = await getCurrentLocation(); // Get location for the new waiting point
+            const location = await getCurrentLocation();
             
-             // Create a new trip object for the connection
-            const previousTrip = appState.currentTrip;
             appState.currentTrip = {
                 id: `trip_${Date.now()}`,
                 userId: appState.userId,
-                lineId: null, // To be selected
+                lineId: null,
                 lineName: null,
                 lineCost: null,
                 events: [{
@@ -986,12 +990,11 @@
                     location: { lat: location.lat, lng: location.lng }
                 }],
                 status: 'waiting',
-                connectionFrom: previousTrip ? previousTrip.id : null
+                connectionFrom: appState.currentTrip ? appState.currentTrip.id : null
             };
-
-            showScreen('journey-start'); // Go back to line selection for the connection
+            showScreen('journey-start');
         } catch (error) {
-            alert('Não foi possível obter a localização para a conexão. Tente novamente.');
+            alert('Não foi possível obter a localização para a ligação. Tente novamente.');
             showScreen('main-user-interface');
         }
     }
@@ -1039,13 +1042,12 @@
 
         const waitSeconds = Math.floor((startTrip - startWait) / 1000);
         const tripSeconds = Math.floor((endTrip - startTrip) / 1000);
-        const totalSeconds = waitSeconds + tripSeconds;
         
         const formatTime = (s) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
         
         document.getElementById('summary-wait-time').textContent = formatTime(waitSeconds);
         document.getElementById('summary-trip-time').textContent = formatTime(tripSeconds);
-        document.getElementById('summary-total-time').textContent = formatTime(totalSeconds);
+        document.getElementById('summary-total-time').textContent = formatTime(waitSeconds + tripSeconds);
         document.getElementById('summary-distance').textContent = '5.2 km'; // Placeholder
         document.getElementById('summary-cost').textContent = `R$ ${appState.currentTrip.lineCost.toFixed(2)}`;
 
@@ -1065,22 +1067,30 @@
 
     // --- History ---
     async function saveTripToHistory() {
+        if (!appState.isAuthReady || !appState.userId) {
+            console.error("Auth not ready. Cannot save trip to history.");
+            alert("Erro de autenticação: Não foi possível guardar a viagem.");
+            return;
+        }
         try {
-            await window.firebase.addDoc(window.firebase.collection(appState.db, "users", appState.userId, "history"), appState.currentTrip);
-            console.log("Trip saved to history.");
+            const historyCollRef = window.firebase.collection(appState.db, "artifacts", appId, "users", appState.userId, "history");
+            await window.firebase.addDoc(historyCollRef, appState.currentTrip);
+            console.log("Trip saved to history for UID:", appState.userId);
             loadUserHistory();
         } catch (error) {
             console.error("Error saving trip:", error);
+            alert("Erro ao guardar a viagem. Verifique a sua conexão.");
         }
     }
     
     async function loadUserHistory() {
-        if (!appState.userId) return;
+        if (!appState.isAuthReady || !appState.userId) { return; }
 
         const historyList = document.getElementById('history-list');
         const noHistoryMsg = document.getElementById('no-history-message');
         
-        const q = window.firebase.query(window.firebase.collection(appState.db, "users", appState.userId, "history"));
+        const historyCollRef = window.firebase.collection(appState.db, "artifacts", appId, "users", appState.userId, "history");
+        const q = window.firebase.query(historyCollRef);
 
         window.firebase.onSnapshot(q, (querySnapshot) => {
              historyList.innerHTML = '';
@@ -1098,6 +1108,8 @@
                      historyList.appendChild(el);
                  });
              }
+        }, (error) => {
+            console.error("Error loading history:", error);
         });
     }
 
@@ -1114,14 +1126,14 @@
     }
     
      function generateDummyData() {
-        const lines = busLines.slice(0, 10).map(l => l.prefix); // Use first 10 lines for demo
+        const lines = busLines.slice(0, 10).map(l => l.prefix);
         return {
-            delays: lines.map(line => ({ line, delay: (Math.random() * 10 - 2) })), // Delays from -2 to 8 mins
+            delays: lines.map(line => ({ line, delay: (Math.random() * 10 - 2) })),
             causes: { 'Congestionamento': 40, 'Tempo de embarque': 25, 'Semáforos': 15, 'Manutenção': 10, 'Outros': 10 },
             occupancy: { '06-08h': 85, '09-11h': 60, '12-14h': 75, '15-17h': 50, '18-20h': 90, '21-23h': 40 },
             busRatings: { 'Limpeza': 4.5, 'Tratamento': 5.1, 'Velocidade': 3.8, 'Lotação': 2.5 },
             stopRatings: { 'Rampa': 3.2, 'Cobertura': 4.1, 'Iluminação': 2.8, 'Piso': 4.5, 'Sinalização': 3.9, 'Segurança': 2.5 },
-            costs: lines.map(line => ({line, cost: 2.50 + (Math.random() - 0.5) })) // Small variation
+            costs: lines.map(line => ({line, cost: 2.50 + (Math.random() - 0.5) }))
         };
     }
 
@@ -1135,9 +1147,9 @@
 
     function createDelayChart(data) {
          const getBarColor = (delay) => {
-            if (delay < 1) return 'rgba(75, 192, 192, 0.6)';   // Verde (Adiantado)
-            if (delay <= 3) return 'rgba(255, 206, 86, 0.6)';  // Amarelo (Pontual)
-            return 'rgba(255, 99, 132, 0.6)';      // Vermelho (Atrasado)
+            if (delay < 1) return 'rgba(75, 192, 192, 0.6)';
+            if (delay <= 3) return 'rgba(255, 206, 86, 0.6)';
+            return 'rgba(255, 99, 132, 0.6)';
         };
         const config = {
             type: 'bar',
@@ -1156,7 +1168,7 @@
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            callback: function(value, index, values) {
+                            callback: function(value) {
                                 return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' min';
                             }
                         }
@@ -1168,9 +1180,7 @@
                          callbacks: {
                             label: function(context) {
                                 let label = context.dataset.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
+                                if (label) { label += ': '; }
                                 if (context.parsed.y !== null) {
                                     label += context.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' min';
                                 }
@@ -1200,27 +1210,11 @@
                          callbacks: {
                             label: function(context) {
                                 let label = context.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                if (context.parsed !== null) {
-                                    label += context.parsed + '%';
-                                }
+                                if (label) { label += ': '; }
+                                if (context.parsed !== null) { label += context.parsed + '%'; }
                                 return label;
                             }
                         }
-                    },
-                     datalabels: {
-                        formatter: (value, ctx) => {
-                            let sum = 0;
-                            let dataArr = ctx.chart.data.datasets[0].data;
-                            dataArr.map(data => {
-                                sum += data;
-                            });
-                            let percentage = (value*100 / sum).toFixed(2)+"%";
-                            return percentage;
-                        },
-                        color: '#fff',
                     }
                 }
             }
@@ -1260,12 +1254,7 @@
                 }]
             },
             options: {
-                 scales: {
-                    r: {
-                        beginAtZero: true,
-                        max: 6
-                    }
-                }
+                 scales: { r: { beginAtZero: true, max: 6 } }
             }
         };
          createOrUpdateChart('bus-rating-chart', config);
@@ -1283,16 +1272,9 @@
                 }]
             },
             options: {
-                indexAxis: 'y', // Horizontal bars
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        max: 6
-                    }
-                },
-                plugins: {
-                    legend: { display: false }
-                }
+                indexAxis: 'y',
+                scales: { x: { beginAtZero: true, max: 6 } },
+                plugins: { legend: { display: false } }
             }
         };
         createOrUpdateChart('stop-items-chart', config);
@@ -1313,15 +1295,11 @@
                 scales: {
                     y: {
                         ticks: {
-                            callback: function(value) {
-                                return 'R$ ' + value.toFixed(2);
-                            }
+                            callback: function(value) { return 'R$ ' + value.toFixed(2); }
                         }
                     }
                 },
-                 plugins: {
-                    legend: { display: false }
-                }
+                 plugins: { legend: { display: false } }
             }
         };
         createOrUpdateChart('cost-chart', config);
@@ -1329,25 +1307,20 @@
 
     function generatePDFReport() {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({
-            orientation: 'landscape',
-            unit: 'px',
-            format: 'a4'
-        });
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'px', format: 'a4' });
 
         doc.setFontSize(20);
         doc.text("Relatório de Desempenho - Mobilis", 40, 30);
         doc.setFontSize(12);
-        doc.text(`Período: ${document.getElementById('report-period').options[document.getElementById('report-period).selectedIndex].text}`, 40, 45);
+        const reportPeriodEl = document.getElementById('report-period');
+        doc.text(`Período: ${reportPeriodEl.options[reportPeriodEl.selectedIndex].text}`, 40, 45);
         doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 40, 60);
 
         const addChartToPDF = (chartId, title, doc) => {
             const canvas = document.getElementById(chartId);
-             // Ensure chart has a white background for PDF
             const canvasImage = canvas.toDataURL('image/png', 1.0);
             const chartWidth = doc.internal.pageSize.getWidth() - 80;
             const chartHeight = (canvas.height * chartWidth) / canvas.width;
-
             doc.addPage('a4', 'l');
             doc.setFontSize(16);
             doc.text(title, 40, 30);
@@ -1359,37 +1332,29 @@
             const canvas2 = document.getElementById(chartId2);
             const canvasImage1 = canvas1.toDataURL('image/png', 1.0);
             const canvasImage2 = canvas2.toDataURL('image/png', 1.0);
-
             const chartWidth = (doc.internal.pageSize.getWidth() / 2) - 60;
             const chartHeight1 = (canvas1.height * chartWidth) / canvas1.width;
             const chartHeight2 = (canvas2.height * chartWidth) / canvas2.width;
-            
             doc.addPage('a4', 'l');
             doc.setFontSize(14);
             doc.text(title1, 40, 30);
             doc.addImage(canvasImage1, 'PNG', 40, 40, chartWidth, chartHeight1);
-
             const xPos2 = doc.internal.pageSize.getWidth() / 2 + 20;
             doc.text(title2, xPos2, 30);
             doc.addImage(canvasImage2, 'PNG', xPos2, 40, chartWidth, chartHeight2);
         };
 
-        // Add charts to PDF
         addChartToPDF('delay-chart', 'Atrasos Médios por Linha (minutos)', doc);
         addChartToPDF('causes-chart', 'Causas Prováveis dos Atrasos', doc);
-        addChartPairToPDF('occupancy-chart', 'Lotação Média por Horário', 'bus-rating-chart', 'Avaliação Média dos Ônibus', doc);
-        addChartPairToPDF('stop-items-chart', 'Avaliação dos Pontos de Ônibus', 'cost-chart', 'Custo Médio por Viagem', doc);
+        addChartPairToPDF('occupancy-chart', 'Lotação Média por Horário', 'bus-rating-chart', 'Avaliação Média dos Autocarros', doc);
+        addChartPairToPDF('stop-items-chart', 'Avaliação das Paragens de Autocarro', 'cost-chart', 'Custo Médio por Viagem', doc);
 
-
-        // Remove the initial blank page
         doc.deletePage(1);
-
         doc.save(`relatorio_mobilis_${new Date().toISOString().split('T')[0]}.pdf`);
     }
     
     function switchToUserView() {
         if (appState.currentUser && appState.currentUser.profile === 'supervisor') {
-             // Simulate a student login to show the user view
             appState.currentUser = { name: 'Supervisor (Visão Estudante)', course: 'N/A', profile: 'student' };
             setupUserInterface(appState.currentUser.name);
         }
@@ -1405,7 +1370,6 @@
         errorEl.classList.add('hidden');
         successEl.classList.add('hidden');
 
-        // This is a mock validation. In a real app, this would be a secure server call.
         if (currentPass !== '@#Log!20252') {
             errorEl.textContent = 'Senha atual incorreta.';
             errorEl.classList.remove('hidden');
@@ -1422,12 +1386,10 @@
             return;
         }
 
-        // Mock success
         console.log("Password would be changed to:", newPass);
         successEl.textContent = 'Senha alterada com sucesso!';
         successEl.classList.remove('hidden');
 
-        // Clear fields
         document.getElementById('currentSupervisorPassword').value = '';
         document.getElementById('newSupervisorPassword').value = '';
         document.getElementById('confirmNewSupervisorPassword').value = '';
@@ -1441,9 +1403,7 @@
                 const file = event.target.files[0];
                 if (file) {
                     const reader = new FileReader();
-                    reader.onload = (e) => {
-                        preview.src = e.target.result;
-                    };
+                    reader.onload = (e) => { preview.src = e.target.result; };
                     reader.readAsDataURL(file);
                 }
             });
@@ -1455,12 +1415,10 @@
     function saveLogos() {
         const logoLeftSrc = document.getElementById('logoLeftPreview').src;
         const logoRightSrc = document.getElementById('logoRightPreview').src;
-
         localStorage.setItem('supervisorLogoLeft', logoLeftSrc);
         localStorage.setItem('supervisorLogoRight', logoRightSrc);
-
         loadLogos();
-        alert('Logos salvos com sucesso!');
+        alert('Logos guardados com sucesso!');
         showScreen('supervisor-dashboard');
     }
 
@@ -1481,39 +1439,39 @@
     }
     
     function confirmClearHistories() {
-        if (confirm("ATENÇÃO: Esta ação apagará permanentemente todos os históricos de viagens de todos os usuários. Deseja continuar?")) {
+        if (confirm("ATENÇÃO: Esta ação apagará permanentemente todos os históricos de viagens de todos os utilizadores. Deseja continuar?")) {
             clearAllHistories();
         }
     }
 
     async function clearAllHistories() {
-        alert("Iniciando limpeza de dados. Isso pode levar um momento.");
+        if (!appState.isAuthReady) {
+            alert("Erro: A autenticação é necessária para realizar esta operação.");
+            return;
+        }
+        alert("A iniciar a limpeza de dados. Isto pode levar um momento.");
         try {
-            // 1. Get all user documents
-            const usersSnapshot = await window.firebase.getDocs(window.firebase.collection(appState.db, "users"));
+            const usersCollRef = window.firebase.collection(appState.db, "artifacts", appId, "users");
+            const usersSnapshot = await window.firebase.getDocs(usersCollRef);
             
-            // 2. For each user, delete their history subcollection
             const batch = window.firebase.writeBatch(appState.db);
             for (const userDoc of usersSnapshot.docs) {
-                const historySnapshot = await window.firebase.getDocs(window.firebase.collection(appState.db, "users", userDoc.id, "history"));
-                historySnapshot.forEach(historyDoc => {
-                    batch.delete(historyDoc.ref);
-                });
+                const historyCollRef = window.firebase.collection(appState.db, "artifacts", appId, "users", userDoc.id, "history");
+                const historySnapshot = await window.firebase.getDocs(historyCollRef);
+                historySnapshot.forEach(historyDoc => { batch.delete(historyDoc.ref); });
             }
             
-            // 3. Delete realtime_bus data
-            const realtimeSnapshot = await window.firebase.getDocs(window.firebase.collection(appState.db, "realtime_bus"));
-            realtimeSnapshot.forEach(doc => {
-                 batch.delete(doc.ref);
-            });
+            const realtimeCollRef = window.firebase.collection(appState.db, "artifacts", appId, "public", "data", "realtime_bus");
+            const realtimeSnapshot = await window.firebase.getDocs(realtimeCollRef);
+            realtimeSnapshot.forEach(doc => { batch.delete(doc.ref); });
 
             await batch.commit();
 
             alert("Todos os históricos de viagem e dados em tempo real foram limpos com sucesso!");
-            initializeDashboard(); // Refresh dashboard with empty data
+            initializeDashboard();
         } catch (error) {
             console.error("Erro ao limpar históricos:", error);
-            alert("Ocorreu um erro ao tentar limpar os dados. Verifique o console para mais detalhes.");
+            alert("Ocorreu um erro ao tentar limpar os dados. Verifique a consola para mais detalhes.");
         }
     }
 
@@ -1521,32 +1479,28 @@
         const summaryBox = document.getElementById('ai-summary-box');
         const summaryContent = document.getElementById('ai-summary-content');
         summaryBox.classList.remove('hidden');
-        summaryContent.innerHTML = '<p class="animate-pulse">Analisando dados e gerando insights...</p>';
+        summaryContent.innerHTML = '<p class="animate-pulse">A analisar dados e a gerar insights...</p>';
         
-        // --- Gemini API Configuration ---
-        const API_KEY = ""; // Leave empty to use proxy
+        const API_KEY = "";
         const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${API_KEY}`;
         
-        // 1. Collect data from dashboard
-        const dashboardData = generateDummyData(); // Using dummy data for this example
+        const dashboardData = generateDummyData();
         const dataPrompt = `
             Aqui estão os dados de desempenho do transporte de estudantes:
             - Atrasos médios por linha em minutos (valores negativos são adiantamentos): ${JSON.stringify(dashboardData.delays)}
             - Principais causas de atrasos (em %): ${JSON.stringify(dashboardData.causes)}
-            - Lotação média dos ônibus por horário (em %): ${JSON.stringify(dashboardData.occupancy)}
-            - Avaliações médias dos pontos de ônibus (escala 1-6): ${JSON.stringify(dashboardData.stopRatings)}
-            - Avaliações médias dos ônibus (escala 1-6): ${JSON.stringify(dashboardData.busRatings)}
+            - Lotação média dos autocarros por horário (em %): ${JSON.stringify(dashboardData.occupancy)}
+            - Avaliações médias das paragens de autocarro (escala 1-6): ${JSON.stringify(dashboardData.stopRatings)}
+            - Avaliações médias dos autocarros (escala 1-6): ${JSON.stringify(dashboardData.busRatings)}
         `;
         
-        // 2. Create the prompt for Gemini
-        const systemPrompt = `Você é um analista de logística especialista em transporte público. Sua tarefa é analisar os dados fornecidos e gerar um resumo conciso e acionável em português do Brasil. O resumo deve ser formatado em HTML, usando listas e tags <strong> para destacar pontos importantes. Identifique os 2 principais problemas e sugira 2 ações corretivas claras e diretas.`;
+        const systemPrompt = `Você é um analista de logística especialista em transporte público. A sua tarefa é analisar os dados fornecidos e gerar um resumo conciso e acionável em português do Brasil. O resumo deve ser formatado em HTML, usando listas e tags <strong> para destacar pontos importantes. Identifique os 2 principais problemas e sugira 2 ações corretivas claras e diretas.`;
 
         const payload = {
             contents: [{ parts: [{ text: dataPrompt }] }],
             systemInstruction: { parts: [{ text: systemPrompt }] },
         };
         
-        // 3. Make the API call
         try {
             const response = await fetch(API_URL, {
                 method: 'POST',
@@ -1554,9 +1508,7 @@
                 body: JSON.stringify(payload)
             });
 
-            if (!response.ok) {
-                throw new Error(`API Error: ${response.statusText}`);
-            }
+            if (!response.ok) { throw new Error(`API Error: ${response.statusText}`); }
 
             const result = await response.json();
             const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -1569,7 +1521,7 @@
 
         } catch (error) {
             console.error("Error calling Gemini API:", error);
-            summaryContent.textContent = "Ocorreu um erro ao tentar gerar o resumo. Verifique o console para detalhes.";
+            summaryContent.textContent = "Ocorreu um erro ao tentar gerar o resumo. Verifique a consola para detalhes.";
         }
     }
 
@@ -1588,7 +1540,3 @@
 
 </body>
 </html>
-
-
-
-
