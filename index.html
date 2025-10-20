@@ -25,7 +25,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, writeBatch, initializeFirestore, CACHE_SIZE_UNLIMITED } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         window.firebase = {
             initializeApp,
             getAuth,
@@ -48,6 +48,8 @@
             where,
             getDocs,
             writeBatch,
+            initializeFirestore,
+            CACHE_SIZE_UNLIMITED
         };
     </script>
     
@@ -149,7 +151,7 @@
     <!-- Loading Overlay -->
     <div id="loading-overlay" class="fixed inset-0 bg-white bg-opacity-90 flex flex-col justify-center items-center z-[2000]">
         <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-ifba-green-dark"></div>
-        <p class="mt-4 text-lg text-ifba-green-dark font-semibold">Conectando aos serviços...</p>
+        <p class="mt-4 text-lg text-ifba-green-dark font-semibold">A conectar aos serviços...</p>
     </div>
 
     <div id="app" class="max-w-4xl mx-auto p-4">
@@ -167,7 +169,7 @@
                 <div class="text-center mb-8">
                     <img src="mob.png" alt="Mobilis Logo" class="mx-auto w-48 mb-4">
                     <h1 class="text-4xl font-bold text-ifba-green-dark">Mobilis</h1>
-                    <p class="text-lg text-gray-600">Monitoramento de Transporte do IFBA Juazeiro</p>
+                    <p class="text-lg text-gray-600">Monitorização de Transporte do IFBA Juazeiro</p>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <button onclick="showScreen('user-login-screen')" class="p-8 bg-white border border-gray-200 rounded-lg shadow-md hover:shadow-xl transition-shadow text-center">
@@ -479,6 +481,7 @@
     <script>
     // --- Application State and Configuration ---
     let appState = {
+        isOnline: false,
         currentScreen: 'initial-screen',
         currentUser: null,
         currentTrip: null,
@@ -497,25 +500,31 @@
     
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
     const IFBA_CAMPUS_COORDS = { lat: -9.450303676457963, lng: -40.52378313230595 };
-
-    // --- Firebase Initialization ---
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
-    };
+    
+    // --- Firebase/Offline Initialization ---
+    function initializeApp() {
+        const hasFirebaseConfig = typeof __firebase_config !== 'undefined';
+        appState.isOnline = hasFirebaseConfig;
+        
+        if (appState.isOnline) {
+            initializeFirebase();
+        } else {
+            console.warn("Firebase config not found. Running in offline mode.");
+            document.getElementById('loading-overlay').classList.add('hidden');
+            setupOfflineAuth();
+        }
+    }
 
     function initializeFirebase() {
-        const effectiveConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
+        const effectiveConfig = JSON.parse(__firebase_config);
         
         try {
             const app = window.firebase.initializeApp(effectiveConfig);
-            appState.db = window.firebase.getFirestore(app);
+            appState.db = window.firebase.initializeFirestore(app, {
+                cacheSizeBytes: window.firebase.CACHE_SIZE_UNLIMITED,
+            });
             appState.auth = window.firebase.getAuth(app);
-            console.log("Firebase initialized.");
+            console.log("Firebase initialized in online mode.");
             setupAuthListener();
         } catch (error) {
             console.error("Firebase initialization failed:", error);
@@ -523,6 +532,13 @@
             alert("Erro crítico: Não foi possível conectar aos serviços da aplicação.");
         }
     }
+
+    function setupOfflineAuth() {
+        appState.isAuthReady = true;
+        appState.userId = 'offline_user_' + Date.now();
+        console.log("Running in offline mode with temporary user ID:", appState.userId);
+    }
+
 
     async function setupAuthListener() {
         const loadingOverlay = document.getElementById('loading-overlay');
@@ -671,7 +687,7 @@
         }
 
         if (!appState.isAuthReady || !appState.userId) {
-            errorEl.textContent = 'Aguardando autenticação... Tente novamente em um instante.';
+            errorEl.textContent = 'A aguardar autenticação... Tente novamente em um instante.';
             errorEl.classList.remove('hidden');
             return;
         }
@@ -679,16 +695,23 @@
 
         appState.currentUser = { name, course, profile: 'student' };
         
-        try {
-            const userDocRef = window.firebase.doc(appState.db, "artifacts", appId, "users", appState.userId);
-            await window.firebase.setDoc(userDocRef, appState.currentUser);
-            console.log("User profile saved for UID:", appState.userId);
-            setupUserInterface(name);
-        } catch (error) {
-            console.error("Error saving user profile: ", error);
-            errorEl.textContent = 'Erro ao guardar o perfil. Verifique a sua conexão e tente novamente.';
-            errorEl.classList.remove('hidden');
+        if (appState.isOnline) {
+            try {
+                const userDocRef = window.firebase.doc(appState.db, "artifacts", appId, "users", appState.userId);
+                await window.firebase.setDoc(userDocRef, appState.currentUser);
+                console.log("User profile saved for UID:", appState.userId);
+            } catch (error) {
+                console.error("Error saving user profile online: ", error);
+                errorEl.textContent = 'Erro ao guardar o perfil online. Verifique a sua conexão e tente novamente.';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+        } else {
+             localStorage.setItem('offline_user_profile', JSON.stringify(appState.currentUser));
+             console.log("User profile saved for offline mode.");
         }
+        
+        setupUserInterface(name);
     }
 
     function setupUserInterface(name) {
@@ -804,7 +827,7 @@
         const etaMessage = document.getElementById('eta-message');
         etaInfo.classList.add('hidden');
         
-        if (!appState.isAuthReady) { return; }
+        if (!appState.isAuthReady || !appState.isOnline) { return; }
 
         try {
             const realtimeCollRef = window.firebase.collection(appState.db, "artifacts", appId, "public", "data", "realtime_bus");
@@ -859,12 +882,16 @@
             });
             appState.currentTrip.status = 'in_progress';
             
-            const busDocRef = window.firebase.doc(appState.db, "artifacts", appId, "public", "data", "realtime_bus", appState.currentTrip.lineId.toString());
-            await window.firebase.setDoc(busDocRef, {
-                lineId: appState.currentTrip.lineId,
-                location: { lat: location.lat, lng: location.lng },
-                timestamp: new Date().toISOString()
-            });
+            if (appState.isOnline) {
+                const busDocRef = window.firebase.doc(appState.db, "artifacts", appId, "public", "data", "realtime_bus", appState.currentTrip.lineId.toString());
+                await window.firebase.setDoc(busDocRef, {
+                    lineId: appState.currentTrip.lineId,
+                    location: { lat: location.lat, lng: location.lng },
+                    timestamp: new Date().toISOString()
+                });
+            } else {
+                console.log("Offline mode: Skipping real-time bus update.");
+            }
 
             document.getElementById('trip-bus-line').textContent = appState.currentTrip.lineName;
             showScreen('journey-in-progress');
@@ -1072,15 +1099,23 @@
             alert("Erro de autenticação: Não foi possível guardar a viagem.");
             return;
         }
-        try {
-            const historyCollRef = window.firebase.collection(appState.db, "artifacts", appId, "users", appState.userId, "history");
-            await window.firebase.addDoc(historyCollRef, appState.currentTrip);
-            console.log("Trip saved to history for UID:", appState.userId);
-            loadUserHistory();
-        } catch (error) {
-            console.error("Error saving trip:", error);
-            alert("Erro ao guardar a viagem. Verifique a sua conexão.");
+        
+        if (appState.isOnline) {
+            try {
+                const historyCollRef = window.firebase.collection(appState.db, "artifacts", appId, "users", appState.userId, "history");
+                await window.firebase.addDoc(historyCollRef, appState.currentTrip);
+                console.log("Trip saved to history for UID:", appState.userId);
+            } catch (error) {
+                console.error("Error saving trip online:", error);
+                alert("Erro ao guardar a viagem online. Verifique a sua conexão.");
+            }
+        } else {
+            let history = JSON.parse(localStorage.getItem('offline_history') || '[]');
+            history.push(appState.currentTrip);
+            localStorage.setItem('offline_history', JSON.stringify(history));
+            console.log("Trip saved to offline history.");
         }
+        loadUserHistory();
     }
     
     async function loadUserHistory() {
@@ -1089,17 +1124,13 @@
         const historyList = document.getElementById('history-list');
         const noHistoryMsg = document.getElementById('no-history-message');
         
-        const historyCollRef = window.firebase.collection(appState.db, "artifacts", appId, "users", appState.userId, "history");
-        const q = window.firebase.query(historyCollRef);
-
-        window.firebase.onSnapshot(q, (querySnapshot) => {
-             historyList.innerHTML = '';
-             if (querySnapshot.empty) {
+        const renderHistory = (trips) => {
+            historyList.innerHTML = '';
+            if (!trips || trips.length === 0) {
                  noHistoryMsg.classList.remove('hidden');
-             } else {
+            } else {
                  noHistoryMsg.classList.add('hidden');
-                 querySnapshot.forEach((doc) => {
-                     const trip = doc.data();
+                 trips.forEach(trip => {
                      const tripDate = new Date(trip.events[0].timestamp).toLocaleDateString('pt-BR');
                      const el = document.createElement('div');
                      el.className = 'bg-gray-100 p-3 rounded-md';
@@ -1107,10 +1138,22 @@
                                     <p class="text-sm text-gray-600">Data: ${tripDate}</p>`;
                      historyList.appendChild(el);
                  });
-             }
-        }, (error) => {
-            console.error("Error loading history:", error);
-        });
+            }
+        };
+        
+        if(appState.isOnline) {
+            const historyCollRef = window.firebase.collection(appState.db, "artifacts", appId, "users", appState.userId, "history");
+            const q = window.firebase.query(historyCollRef);
+            window.firebase.onSnapshot(q, (querySnapshot) => {
+                 const trips = querySnapshot.docs.map(doc => doc.data());
+                 renderHistory(trips);
+            }, (error) => {
+                console.error("Error loading history online:", error);
+            });
+        } else {
+            const trips = JSON.parse(localStorage.getItem('offline_history') || '[]');
+            renderHistory(trips);
+        }
     }
 
     // --- Supervisor Section ---
@@ -1445,8 +1488,8 @@
     }
 
     async function clearAllHistories() {
-        if (!appState.isAuthReady) {
-            alert("Erro: A autenticação é necessária para realizar esta operação.");
+        if (!appState.isAuthReady || !appState.isOnline) {
+            alert("Erro: Esta operação requer uma conexão online.");
             return;
         }
         alert("A iniciar a limpeza de dados. Isto pode levar um momento.");
@@ -1528,7 +1571,7 @@
 
     // --- App Initialization ---
     window.onload = () => {
-        initializeFirebase();
+        initializeApp();
         populateBusLines();
         createRatingControls('bus-rating-criteria', ratingCriteria.bus);
         createRatingControls('stop-rating-criteria', ratingCriteria.stop);
@@ -1540,3 +1583,4 @@
 
 </body>
 </html>
+
