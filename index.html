@@ -5,28 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mobilis - IFBA Juazeiro</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- LeafletJS for Maps -->
+    <!-- Leaflet (Map Library) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     
-    <!-- Chart.js for Dashboards -->
+    <!-- Chart.js (Dashboard Charts) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 
-    <!-- jsPDF for PDF Reports -->
+    <!-- jsPDF & jsPDF-AutoTable (PDF Generation) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
-    <!-- Custom Fonts and Icons -->
+    <!-- Google Maps API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places,routes" async defer></script>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        window.firebase = {
+            initializeApp,
+            getAuth,
+            signInAnonymously,
+            signInWithCustomToken,
+            onAuthStateChanged,
+            signOut,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            getFirestore,
+            doc,
+            getDoc,
+            setDoc,
+            addDoc,
+            updateDoc,
+            deleteDoc,
+            onSnapshot,
+            collection,
+            query,
+            where,
+            getDocs,
+            writeBatch,
+        };
+    </script>
+    
+    <!-- Fonts and Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide-react@0.292.0/dist/lucide-react.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-
 
     <style>
         body {
@@ -38,6 +67,7 @@
             --ifba-green-dark: #1C5240;
             --ifba-green-light: #2F8C56;
             --ifba-accent-gold: #F2A30F;
+            --ifba-red-error: #D32F2F;
         }
 
         .bg-ifba-green-dark { background-color: var(--ifba-green-dark); }
@@ -47,1326 +77,1517 @@
         .bg-ifba-accent-gold { background-color: var(--ifba-accent-gold); }
         .text-ifba-accent-gold { color: var(--ifba-accent-gold); }
         .border-ifba-green-dark { border-color: var(--ifba-green-dark); }
+        .border-ifba-green-light { border-color: var(--ifba-green-light); }
+        
+        /* 3D Button Style */
+        .btn-3d {
+            transition: all 0.15s ease-out;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 0 0 var(--shadow-color);
+        }
+        .btn-3d:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 0 var(--shadow-color);
+        }
+        .btn-3d:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 0 var(--shadow-color);
+        }
+        .btn-green {
+             --shadow-color: #1a493a; /* Darker green */
+             background-color: var(--ifba-green-dark);
+        }
+        .btn-gold {
+            --shadow-color: #c8870c; /* Darker gold */
+            background-color: var(--ifba-accent-gold);
+        }
 
-        .btn {
-            @apply w-full text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105;
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
         }
-        .btn-primary {
-            @apply bg-ifba-green-dark hover:bg-ifba-green-light;
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
         }
-        .btn-secondary {
-            @apply bg-ifba-accent-gold hover:opacity-90;
+        ::-webkit-scrollbar-thumb {
+            background: var(--ifba-green-light);
+            border-radius: 4px;
         }
-        .btn-danger {
-            @apply bg-red-600 hover:bg-red-700;
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--ifba-green-dark);
         }
-        .input-field {
-            @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ifba-green-light;
-        }
-        .screen {
+        .hidden {
             display: none;
-            animation: fadeIn 0.5s;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .active-screen {
-            display: block;
-        }
-        .modal-overlay {
-            @apply fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50;
-        }
-        .modal-content {
-            @apply bg-white p-8 rounded-xl shadow-2xl max-w-sm w-full text-center;
+
+        /* Centered Popup */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
         }
     </style>
 </head>
-<body class="bg-gray-100">
 
-    <div id="app-container" class="max-w-4xl mx-auto min-h-screen bg-white shadow-lg">
-        
-        <!-- Header Supervisor -->
-        <header id="supervisor-header" class="hidden p-4 bg-ifba-green-dark text-white items-center justify-between shadow-md">
-            <img id="logo-left" src="https://placehold.co/100x40/1C5240/FFFFFF?text=Logo+1" alt="Logo Esquerda" class="h-10">
-            <h1 class="text-2xl font-bold text-white">Mobilis <span class="text-sm font-normal text-ifba-accent-gold">| Supervisor</span></h1>
-            <img id="logo-right" src="https://placehold.co/100x40/1C5240/FFFFFF?text=Logo+2" alt="Logo Direita" class="h-10">
+<body class="bg-gray-50 text-gray-800">
+
+    <div id="app" class="max-w-4xl mx-auto p-4">
+
+        <!-- Header Logos -->
+        <header class="flex justify-between items-center mb-6">
+            <img id="supervisorLogoLeft" src="https://placehold.co/150x50/FFFFFF/1C5240?text=Logo+Esquerda" alt="Logo Esquerda" class="h-12 hidden">
+            <img id="supervisorLogoRight" src="https://placehold.co/150x50/FFFFFF/1C5240?text=Logo+Direita" alt="Logo Direita" class="h-12 hidden">
         </header>
 
-        <!-- Main Content -->
-        <main class="p-4 sm:p-6 md:p-8">
+        <!-- Dynamic Content Area -->
+        <main id="content-area">
+            <!-- Initial Screen -->
+            <div id="initial-screen">
+                <div class="text-center mb-8">
+                    <img src="https://i.ibb.co/6yVw2WN/mob.png" alt="Mobilis Logo" class="mx-auto w-48 mb-4">
+                    <h1 class="text-4xl font-bold text-ifba-green-dark">Mobilis</h1>
+                    <p class="text-lg text-gray-600">Monitoramento de Transporte do IFBA Juazeiro</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <button onclick="showScreen('user-login-screen')" class="p-8 bg-white border border-gray-200 rounded-lg shadow-md hover:shadow-xl transition-shadow text-center">
+                        <i data-lucide="user-round" class="w-16 h-16 mx-auto mb-4 text-ifba-green-dark"></i>
+                        <h2 class="text-2xl font-semibold">Sou Estudante</h2>
+                        <p class="text-gray-500">Registrar e avaliar minhas viagens.</p>
+                    </button>
+                    <button onclick="showScreen('supervisor-login-screen')" class="p-8 bg-white border border-gray-200 rounded-lg shadow-md hover:shadow-xl transition-shadow text-center">
+                        <i data-lucide="user-cog" class="w-16 h-16 mx-auto mb-4 text-ifba-green-dark"></i>
+                        <h2 class="text-2xl font-semibold">Sou Supervisor</h2>
+                        <p class="text-gray-500">Acessar painel e relatórios.</p>
+                    </button>
+                </div>
+            </div>
 
-            <!-- Tela Inicial -->
-            <div id="initial-screen" class="screen active-screen text-center">
-                <img src="mob.png" alt="Logo Mobilis" class="mx-auto mb-12 w-48">
-                <h1 class="text-4xl font-bold text-ifba-green-dark mb-2">Bem-vindo ao Mobilis!</h1>
-                <p class="text-gray-600 mb-12">Seu assistente de mobilidade do IFBA - Campus Juazeiro.</p>
-                <div class="space-y-4 max-w-sm mx-auto">
-                    <button onclick="app.showScreen('user-login-register-screen')" class="btn btn-primary">
-                        <i data-lucide="user" class="inline-block mr-2"></i> Sou Estudante
-                    </button>
-                    <button onclick="app.showScreen('supervisor-login-screen')" class="btn btn-secondary">
-                        <i data-lucide="shield-check" class="inline-block mr-2"></i> Sou Supervisor
-                    </button>
+            <!-- User Login/Register Screen -->
+            <div id="user-login-screen" class="hidden bg-white p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6 text-center">Acesso do Estudante</h2>
+                <div id="user-auth-form">
+                    <input type="text" id="userName" placeholder="Nome Completo" class="w-full p-3 mb-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-ifba-green-light outline-none">
+                    <select id="userCourse" class="w-full p-3 mb-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-ifba-green-light outline-none bg-white">
+                        <option value="" disabled selected>Selecione seu Curso</option>
+                        <option>Ensino Médio</option>
+                        <option>Curso técnico em Administração</option>
+                        <option>Curso técnico em Segurança do Trabalho</option>
+                        <option>Cursos superiores de Tecnologia em Logística</option>
+                    </select>
+                    <p id="user-error" class="text-red-500 text-sm mb-4 hidden"></p>
+                    <button onclick="loginUser()" class="w-full p-3 rounded-md text-white font-semibold btn-3d btn-green">Entrar / Cadastrar</button>
+                </div>
+            </div>
+
+            <!-- Supervisor Login Screen -->
+            <div id="supervisor-login-screen" class="hidden bg-white p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6 text-center">Acesso do Supervisor</h2>
+                <div id="supervisor-auth-form">
+                    <input type="text" id="supervisorLogin" placeholder="Login" class="w-full p-3 mb-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-ifba-green-light outline-none">
+                    <input type="password" id="supervisorPassword" placeholder="Senha" class="w-full p-3 mb-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-ifba-green-light outline-none">
+                    <p id="supervisor-error" class="text-red-500 text-sm mb-4 hidden"></p>
+                    <button onclick="loginSupervisor()" class="w-full p-3 rounded-md text-white font-semibold btn-3d btn-green">Entrar</button>
                 </div>
             </div>
             
-            <!-- Tela de Login/Cadastro do Usuário -->
-            <div id="user-login-register-screen" class="screen">
-                 <h2 class="text-2xl font-bold text-ifba-green-dark mb-6 text-center">Acesso do Estudante</h2>
-                 <form id="user-register-form" class="space-y-4 max-w-md mx-auto">
-                    <input type="text" id="user-fullname" placeholder="Nome Completo" class="input-field" required>
-                    <select id="user-course" class="input-field" required>
-                        <option value="" disabled selected>Selecione seu curso</option>
-                        <option value="Ensino Medio">Ensino Médio</option>
-                        <option value="Tecnico Administracao">Curso técnico em Administração</option>
-                        <option value="Tecnico Seguranca">Curso técnico em Segurança do Trabalho</option>
-                        <option value="Superior Logistica">Cursos superiores de Tecnologia em Logística</option>
+            <!-- Main User Interface (after login) -->
+            <div id="main-user-interface" class="hidden">
+                 <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Olá, <span id="display-user-name"></span>!</h2>
+                    <button onclick="logout()" class="text-sm text-red-600 hover:underline">Sair</button>
+                </div>
+                <!-- Journey Steps -->
+                <div id="journey-start">
+                    <h3 class="text-lg font-semibold mb-2">Iniciar Nova Viagem</h3>
+                    <p class="mb-4 text-gray-600">Selecione a linha de ônibus para começar.</p>
+                    <select id="bus-line-select" class="w-full p-3 mb-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-ifba-green-light outline-none bg-white">
+                        <option value="" disabled selected>Selecione uma linha...</option>
+                        <!-- Options will be populated by JS -->
                     </select>
-                    <button type="submit" class="btn btn-primary">Entrar / Cadastrar</button>
-                    <button type="button" onclick="app.showScreen('initial-screen')" class="btn bg-gray-500 hover:bg-gray-600">Voltar</button>
-                </form>
-            </div>
-
-            <!-- Tela de Login do Supervisor -->
-            <div id="supervisor-login-screen" class="screen">
-                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6 text-center">Acesso do Supervisor</h2>
-                <form id="supervisor-login-form" class="space-y-4 max-w-md mx-auto">
-                    <input type="text" id="supervisor-login" placeholder="Login" class="input-field" required>
-                    <input type="password" id="supervisor-password" placeholder="Senha" class="input-field" required>
-                     <p id="supervisor-login-error" class="text-red-500 text-sm hidden">Credenciais inválidas.</p>
-                    <button type="submit" class="btn btn-primary">Entrar</button>
-                    <button type="button" onclick="app.showScreen('initial-screen')" class="btn bg-gray-500 hover:bg-gray-600">Voltar</button>
-                </form>
-            </div>
-
-            <!-- Tela Principal do Usuário -->
-            <div id="user-main-screen" class="screen">
-                <div id="user-map-container" class="hidden h-64 bg-gray-200 rounded-lg mb-4 shadow-inner">
-                    <div id="user-map" class="h-full w-full rounded-lg"></div>
-                </div>
-                <div id="trip-info-banner" class="hidden bg-ifba-green-dark text-white p-3 rounded-lg mb-4 text-center font-semibold">
-                    <p>Tempo de Viagem: <span id="trip-timer-display">00:00</span> | ETA: <span id="trip-eta-display">--:--</span></p>
+                    <input type="text" id="bus-line-manual" placeholder="Ou digite o nome/código da linha" class="w-full p-3 mb-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-ifba-green-light outline-none">
+                    <p id="bus-line-error" class="text-red-500 text-sm mb-4 hidden"></p>
+                    <button onclick="startWaiting()" class="w-full p-4 rounded-md text-white font-bold text-lg btn-3d btn-green flex items-center justify-center gap-2">
+                        <i data-lucide="timer"></i>
+                        Estou em espera do ônibus
+                    </button>
                 </div>
 
-                <div id="user-action-panel" class="text-center">
-                    <h2 class="text-2xl font-bold text-ifba-green-dark mb-1">Olá, <span id="user-greeting-name"></span>!</h2>
-                    <p class="text-gray-600 mb-6">Pronto para começar sua viagem?</p>
-
-                    <div id="select-line-step" class="step">
-                        <h3 class="font-semibold text-lg mb-3">1. Selecione a Linha</h3>
-                        <select id="bus-line-select" class="input-field mb-2">
-                            <!-- Options will be populated by JS -->
-                        </select>
-                        <input type="text" id="bus-line-manual" class="input-field hidden" placeholder="Digite o código/nome da linha">
-                        <a href="#" onclick="app.toggleManualLineEntry()" class="text-sm text-ifba-green-dark hover:underline">Não encontrou sua linha?</a>
-                        <button onclick="app.startWait()" class="btn btn-primary mt-4">Iniciar Espera</button>
+                <div id="journey-waiting" class="hidden text-center">
+                    <h3 class="text-lg font-semibold mb-2">Aguardando ônibus...</h3>
+                    <p class="text-gray-600">Linha: <span id="waiting-bus-line" class="font-bold"></span></p>
+                    <div class="my-6">
+                        <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-ifba-green-dark mx-auto"></div>
+                        <p class="text-4xl font-bold mt-4" id="waiting-timer">00:00</p>
                     </div>
+                     <div id="eta-info" class="bg-blue-100 border border-blue-300 text-blue-800 p-3 rounded-md my-4 hidden">
+                        <p id="eta-message"></p>
+                     </div>
+                    <button onclick="startTrip()" class="w-full p-4 rounded-md text-white font-bold text-lg btn-3d btn-gold flex items-center justify-center gap-2">
+                        <i data-lucide="bus-front"></i>
+                        Embarquei! Iniciar Viagem
+                    </button>
+                </div>
 
-                    <div id="waiting-step" class="step hidden">
-                        <h3 class="font-semibold text-lg mb-3">2. Aguardando o ônibus...</h3>
-                        <div class="text-5xl font-bold text-ifba-accent-gold my-4" id="wait-timer-display">00:00</div>
-                        <p id="wait-eta-display" class="text-ifba-green-dark bg-green-100 p-2 rounded-lg hidden mb-4 font-semibold"></p>
-                        <p class="text-gray-500">Ponto de espera registrado via GPS.</p>
-                        <button onclick="app.startTrip()" class="btn btn-primary mt-4">Embarquei! Iniciar Viagem</button>
-                    </div>
+                <div id="journey-in-progress" class="hidden">
+                     <h3 class="text-lg font-semibold mb-2 text-center">Viagem em andamento...</h3>
+                     <p class="text-gray-600 text-center mb-4">Linha: <span id="trip-bus-line" class="font-bold"></span></p>
                     
-                    <div id="trip-step" class="step hidden">
-                         <h3 class="font-semibold text-lg mb-3">3. Viagem em andamento...</h3>
-                         <p class="text-gray-600 mb-4">O mapa acima mostra seu trajeto. Tenha uma boa viagem!</p>
-                         <button onclick="app.endTrip()" class="btn btn-danger">Desembarquei! Finalizar Viagem</button>
+                     <!-- Map Area -->
+                     <div id="map-container" class="w-full h-64 bg-gray-200 rounded-lg mb-4 border-2 border-ifba-green-dark">
+                         <div id="map" style="height: 100%; width: 100%;"></div>
+                     </div>
+                     <p class="text-center font-semibold text-lg mb-4">Tempo de viagem: <span id="trip-timer">00:00</span></p>
+
+                    <button onclick="endTrip()" class="w-full p-4 rounded-md text-white font-bold text-lg btn-3d btn-green flex items-center justify-center gap-2">
+                        <i data-lucide="flag-off"></i>
+                        Desembarque realizado
+                    </button>
+                </div>
+
+                <!-- User Trip History -->
+                <div id="user-history" class="mt-8">
+                    <h3 class="text-lg font-semibold mb-4 border-b-2 pb-2 border-ifba-green-light">Histórico de Viagens (Últimas 30)</h3>
+                    <div id="history-list" class="space-y-3 max-h-96 overflow-y-auto pr-2">
+                        <!-- History items will be populated by JS -->
+                        <p id="no-history-message" class="text-gray-500">Nenhuma viagem registrada ainda.</p>
                     </div>
+                </div>
+            </div>
 
-                    <div class="mt-8 border-t pt-6">
-                        <button onclick="app.showScreen('user-history-screen')" class="btn bg-gray-200 text-gray-700 hover:bg-gray-300">
-                            <i data-lucide="history" class="inline-block mr-2"></i> Histórico de Viagens
-                        </button>
-                         <button onclick="app.logout()" class="btn bg-red-100 text-red-700 hover:bg-red-200 mt-2">
-                            <i data-lucide="log-out" class="inline-block mr-2"></i> Sair
-                        </button>
+            <!-- Connection Popup -->
+            <div id="connection-popup" class="popup-overlay hidden">
+                <div class="bg-white p-8 rounded-lg shadow-2xl text-center w-full max-w-sm">
+                    <h3 class="text-xl font-bold text-ifba-green-dark mb-4">Haverá conexão?</h3>
+                    <p class="text-gray-600 mb-6">Você vai pegar outro ônibus para completar sua viagem?</p>
+                    <div class="flex justify-around">
+                        <button onclick="handleConnection(true)" class="px-8 py-3 rounded-md text-white font-semibold btn-3d btn-green">Sim</button>
+                        <button onclick="handleConnection(false)" class="px-8 py-3 rounded-md text-white font-semibold btn-3d btn-gold">Não</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Tela de Histórico do Usuário -->
-            <div id="user-history-screen" class="screen">
-                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Histórico de Viagens</h2>
-                <div id="history-list" class="space-y-3">
-                    <!-- History items will be populated by JS -->
+            <!-- Rating Screen -->
+            <div id="rating-screen" class="hidden bg-white p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Avalie sua Viagem</h2>
+                
+                <!-- Bus Stop Rating -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold mb-4 border-b pb-2">Ponto de Ônibus</h3>
+                    <div class="space-y-4">
+                        <div id="stop-rating-criteria"></div>
+                        <textarea id="stop-rating-comments" placeholder="Comentários adicionais sobre o ponto (opcional)" class="w-full p-2 border rounded-md" rows="2"></textarea>
+                    </div>
                 </div>
-                <button onclick="app.showScreen('user-main-screen')" class="btn bg-gray-500 hover:bg-gray-600 mt-6">Voltar</button>
+
+                <!-- Bus Rating -->
+                <div>
+                    <h3 class="text-lg font-semibold mb-4 border-b pb-2">Ônibus</h3>
+                    <div class="space-y-4">
+                         <div id="bus-rating-criteria"></div>
+                         <textarea id="bus-rating-comments" placeholder="Comentários adicionais sobre o ônibus (opcional)" class="w-full p-2 border rounded-md" rows="2"></textarea>
+                    </div>
+                </div>
+                <p id="rating-error" class="text-red-500 text-sm mt-4 hidden"></p>
+                <button onclick="submitRating()" class="w-full mt-6 p-3 rounded-md text-white font-semibold btn-3d btn-green">Enviar Avaliação</button>
             </div>
 
-            <!-- Tela de Avaliação -->
-            <div id="evaluation-screen" class="screen">
-                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6 text-center">Avalie sua Viagem</h2>
-                <div id="evaluation-forms-container">
-                    <!-- Evaluation forms will be inserted here by JS -->
+             <!-- Summary Screen -->
+            <div id="summary-screen" class="hidden bg-white p-8 rounded-lg shadow-lg text-center">
+                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Resumo da Viagem</h2>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
+                    <div class="p-4 bg-gray-100 rounded-lg">
+                        <p class="text-sm text-gray-500">Tempo de Espera</p>
+                        <p id="summary-wait-time" class="text-2xl font-bold">--:--</p>
+                    </div>
+                    <div class="p-4 bg-gray-100 rounded-lg">
+                        <p class="text-sm text-gray-500">Tempo de Viagem</p>
+                        <p id="summary-trip-time" class="text-2xl font-bold">--:--</p>
+                    </div>
+                    <div class="p-4 bg-gray-100 rounded-lg col-span-2 md:col-span-1">
+                        <p class="text-sm text-gray-500">Tempo Total</p>
+                        <p id="summary-total-time" class="text-2xl font-bold text-ifba-green-dark">--:--</p>
+                    </div>
+                    <div class="p-4 bg-gray-100 rounded-lg">
+                        <p class="text-sm text-gray-500">Distância</p>
+                        <p id="summary-distance" class="text-2xl font-bold">-- km</p>
+                    </div>
+                    <div class="p-4 bg-gray-100 rounded-lg">
+                        <p class="text-sm text-gray-500">Custo Aprox.</p>
+                        <p id="summary-cost" class="text-2xl font-bold">R$ --,--</p>
+                    </div>
                 </div>
-                 <button onclick="app.submitEvaluation()" class="btn btn-primary mt-6">Finalizar Avaliação</button>
+                <p class="mt-6 text-gray-500 text-sm">Esta tela fechará em <span id="summary-countdown">30</span>s.</p>
             </div>
 
-            <!-- Dashboard do Supervisor -->
-            <div id="supervisor-dashboard-screen" class="screen">
-                <h2 class="text-3xl font-bold text-ifba-green-dark mb-6">Dashboard do Supervisor</h2>
-                <div class="flex justify-between items-center mb-6">
-                    <div class="flex space-x-2">
-                        <select id="supervisor-period-filter" class="input-field w-auto">
+            <!-- Supervisor Dashboard -->
+            <div id="supervisor-dashboard" class="hidden">
+                 <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold text-ifba-green-dark">Dashboard do Supervisor</h2>
+                     <div>
+                        <button onclick="showScreen('supervisor-password-change')" class="text-sm text-blue-600 hover:underline mr-4">Trocar Senha</button>
+                        <button onclick="logout()" class="text-sm text-red-600 hover:underline">Sair</button>
+                     </div>
+                </div>
+                
+                <div class="bg-white p-4 rounded-lg shadow mb-6">
+                    <h3 class="font-semibold mb-2">Ações</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <select id="report-period" class="p-2 border rounded-md bg-white">
                             <option value="daily">Diário</option>
                             <option value="weekly">Semanal</option>
                             <option value="biweekly">Quinzenal</option>
-                            <option value="monthly" selected>Mensal</option>
+                            <option value="monthly">Mensal</option>
                             <option value="semiannual">Semestral</option>
                             <option value="annual">Anual</option>
-                            <option value="custom">Customizado</option>
                         </select>
-                        <div id="custom-date-filter" class="hidden space-x-2">
-                            <input type="date" id="start-date" class="input-field w-auto">
-                            <input type="date" id="end-date" class="input-field w-auto">
-                        </div>
+                        <button onclick="generatePDFReport()" class="p-2 rounded-md text-white btn-3d btn-green flex items-center gap-1"><i data-lucide="file-down"></i>Gerar PDF</button>
+                        <button onclick="showScreen('manage-lines-screen')" class="p-2 rounded-md text-white btn-3d btn-gold flex items-center gap-1"><i data-lucide="bus"></i>Gerenciar Linhas</button>
+                        <button onclick="showScreen('manage-logos-screen')" class="p-2 rounded-md text-white btn-3d btn-gold flex items-center gap-1"><i data-lucide="image"></i>Gerenciar Logos</button>
+                         <button id="clear-history-btn" onclick="confirmClearHistories()" class="p-2 rounded-md text-white bg-red-600 hover:bg-red-700 flex items-center gap-1" style="box-shadow: 0 4px 0 0 #ab2424;"><i data-lucide="trash-2"></i>Limpar Históricos</button>
+                         <button onclick="generateAISummary()" class="p-2 rounded-md text-white btn-3d btn-green flex items-center gap-1" style="background-color: #4a148c; --shadow-color: #380f6b;">✨ Gerar Resumo com IA</button>
                     </div>
-                     <button onclick="app.generatePDFReport()" class="btn btn-secondary px-4 py-2">
-                        <i data-lucide="file-down" class="inline-block mr-2"></i> Gerar PDF
-                    </button>
                 </div>
-                
-                <!-- Dashboard Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-gray-50 p-4 rounded-lg shadow-md md:col-span-2">
+
+                <!-- AI Summary Box -->
+                <div id="ai-summary-box" class="hidden bg-purple-50 border-l-4 border-purple-500 text-purple-800 p-4 rounded-md mb-6 shadow">
+                    <h3 class="font-bold mb-2 flex items-center gap-2"><i data-lucide="sparkles"></i>Resumo da Inteligência Artificial</h3>
+                    <div id="ai-summary-content" class="text-sm space-y-2">
+                        <p class="animate-pulse">Analisando dados e gerando insights...</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Main Chart: Average Delays -->
+                    <div class="lg:col-span-2 bg-white p-4 rounded-lg shadow">
                         <h3 class="font-semibold mb-2">Atrasos Médios por Linha (minutos)</h3>
                         <canvas id="delay-chart"></canvas>
                     </div>
-                    <div class="bg-gray-50 p-4 rounded-lg shadow-md">
-                        <h3 class="font-semibold mb-2">Avaliação dos Pontos de Ônibus</h3>
-                        <canvas id="stop-rating-chart"></canvas>
+                    
+                    <!-- Other Metrics -->
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <h3 class="font-semibold mb-2">Causas Prováveis dos Atrasos</h3>
+                        <canvas id="causes-chart"></canvas>
                     </div>
-                    <div class="bg-gray-50 p-4 rounded-lg shadow-md">
+                    <div class="bg-white p-4 rounded-lg shadow">
                         <h3 class="font-semibold mb-2">Lotação Média por Horário</h3>
-                        <canvas id="capacity-chart"></canvas>
+                        <canvas id="occupancy-chart"></canvas>
                     </div>
-                    <div class="bg-gray-50 p-4 rounded-lg shadow-md">
-                        <h3 class="font-semibold mb-2">Ranking de Eficiência</h3>
-                        <div id="efficiency-ranking"></div>
+                    <div class="lg:col-span-2 bg-white p-4 rounded-lg shadow">
+                         <h3 class="font-semibold mb-2">Avaliação Média dos Itens dos Pontos de Ônibus</h3>
+                         <canvas id="stop-items-chart"></canvas>
                     </div>
-                     <div class="bg-gray-50 p-4 rounded-lg shadow-md">
-                        <h3 class="font-semibold mb-2">Custo Médio Total por Viagem (R$)</h3>
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <h3 class="font-semibold mb-2">Avaliação Média dos Ônibus</h3>
+                        <canvas id="bus-rating-chart"></canvas>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <h3 class="font-semibold mb-2">Custo Médio Total por Viagem</h3>
                         <canvas id="cost-chart"></canvas>
                     </div>
-                    <div class="bg-gray-50 p-4 rounded-lg shadow-md md:col-span-2">
-                        <h3 class="font-semibold mb-2">Causas Prováveis dos Atrasos</h3>
-                        <canvas id="delay-causes-chart"></canvas>
-                    </div>
                 </div>
 
-                <!-- Botões de Ação -->
-                 <div class="mt-8 border-t pt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <button onclick="app.showScreen('manage-lines-screen')" class="btn bg-ifba-green-light">
-                        <i data-lucide="bus" class="inline-block mr-2"></i> Gerenciar Linhas
-                    </button>
-                    <button onclick="app.showScreen('manage-logos-screen')" class="btn bg-ifba-green-light">
-                        <i data-lucide="image" class="inline-block mr-2"></i> Gerenciar Logos
-                    </button>
-                    <button onclick="app.showScreen('supervisor-profile-screen')" class="btn bg-ifba-green-light">
-                        <i data-lucide="key-round" class="inline-block mr-2"></i> Alterar Senha
-                    </button>
-                     <button onclick="app.logout()" class="btn btn-danger md:col-span-3">
-                        <i data-lucide="log-out" class="inline-block mr-2"></i> Sair
+                 <!-- User Mode Button -->
+                <div class="mt-8 text-center">
+                    <button onclick="switchToUserView()" class="p-3 rounded-md text-white font-semibold btn-3d btn-gold">
+                        <i data-lucide="user-round" class="inline-block mr-2"></i>Visualizar como Estudante
                     </button>
                 </div>
+
             </div>
 
-            <!-- Tela de Gerenciamento de Linhas -->
-            <div id="manage-lines-screen" class="screen">
-                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Gerenciamento de Linhas</h2>
-                <div class="mb-6 p-4 border rounded-lg">
-                    <h3 class="font-semibold text-lg mb-3">Adicionar Nova Linha</h3>
-                    <div class="space-y-3">
-                        <input id="new-line-prefix" type="text" placeholder="Prefixo/Nome da Linha" class="input-field">
-                        <textarea id="new-line-route" placeholder="Rota Detalhada" class="input-field" rows="2"></textarea>
-                        <input id="new-line-schedule" type="text" placeholder="Horários (ex: 06:00, 07:30...)" class="input-field">
-                        <input id="new-line-cost" type="number" step="0.01" placeholder="Custo Aproximado (R$)" class="input-field">
-                        <button onclick="app.addNewLine()" class="btn btn-primary">Adicionar Manualmente</button>
-                    </div>
-                     <div class="mt-4 border-t pt-4">
-                        <h3 class="font-semibold mb-2">Importar em Massa</h3>
-                        <input type="file" id="import-file" accept=".csv,.txt" class="input-field">
-                        <button onclick="app.importLines()" class="btn btn-secondary mt-2">Importar de Arquivo</button>
-                    </div>
+             <!-- Supervisor: Manage Lines Screen -->
+            <div id="manage-lines-screen" class="hidden bg-white p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Gerenciar Linhas de Ônibus</h2>
+                
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-2">Adicionar Nova Linha</h3>
+                    <input type="text" id="newLinePrefix" placeholder="Prefixo (Ex: 102)" class="w-full p-2 mb-2 border rounded-md">
+                    <input type="text" id="newLineRoute" placeholder="Rota (Ex: João Paulo II - Brisa da Serra)" class="w-full p-2 mb-2 border rounded-md">
+                    <input type="text" id="newLineTimes" placeholder="Horários (separados por vírgula)" class="w-full p-2 mb-2 border rounded-md">
+                    <input type="number" id="newLineCost" placeholder="Custo Aprox. (Ex: 2.50)" class="w-full p-2 mb-2 border rounded-md">
+                    <button onclick="addNewLine()" class="w-full p-2 rounded-md text-white btn-3d btn-green">Adicionar Linha</button>
                 </div>
-                <div id="lines-list-container">
-                    <h3 class="font-semibold text-lg mb-3">Linhas Cadastradas</h3>
-                    <div id="lines-list" class="space-y-2">
-                        <!-- Lista de linhas será populada aqui -->
-                    </div>
-                </div>
-                 <button onclick="app.showScreen('supervisor-dashboard-screen')" class="btn bg-gray-500 hover:bg-gray-600 mt-6">Voltar</button>
-            </div>
-
-            <!-- Tela de Gerenciamento de Logos -->
-            <div id="manage-logos-screen" class="screen">
-                 <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Personalizar Logos</h2>
-                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                     <div class="text-center">
-                         <h3 class="font-semibold text-lg mb-2">Logo Esquerdo</h3>
-                         <img id="logo-left-preview" src="https://placehold.co/200x80/EEEEEE/333333?text=Preview" alt="Preview Logo Esquerdo" class="mx-auto mb-4 border rounded-lg h-24">
-                         <input type="file" id="logo-left-upload" accept="image/*" class="input-field">
-                     </div>
-                     <div class="text-center">
-                         <h3 class="font-semibold text-lg mb-2">Logo Direito</h3>
-                         <img id="logo-right-preview" src="https://placehold.co/200x80/EEEEEE/333333?text=Preview" alt="Preview Logo Direito" class="mx-auto mb-4 border rounded-lg h-24">
-                         <input type="file" id="logo-right-upload" accept="image/*" class="input-field">
-                     </div>
+                 <div class="mb-6">
+                    <h3 class="text-lg font-semibold mb-2">Importar Linhas (CSV/TXT)</h3>
+                    <input type="file" id="importFile" accept=".csv,.txt" class="w-full p-2 border rounded-md">
+                    <button onclick="importLines()" class="w-full mt-2 p-2 rounded-md text-white btn-3d btn-gold">Importar Arquivo</button>
                  </div>
-                 <div class="mt-8 flex space-x-4">
-                    <button onclick="app.saveLogos()" class="btn btn-primary">Salvar Alterações</button>
-                    <button onclick="app.showScreen('supervisor-dashboard-screen')" class="btn bg-gray-500 hover:bg-gray-600">Voltar</button>
-                 </div>
+
+                <h3 class="text-lg font-semibold mb-2">Linhas Cadastradas</h3>
+                <div id="lines-list" class="space-y-2 max-h-60 overflow-y-auto">
+                    <!-- Lines list populated by JS -->
+                </div>
+                
+                <button onclick="showScreen('supervisor-dashboard')" class="mt-6 p-3 rounded-md text-ifba-green-dark font-semibold border-2 border-ifba-green-dark hover:bg-gray-100 w-full">Voltar ao Dashboard</button>
             </div>
 
-            <!-- Tela de Perfil/Troca de Senha do Supervisor -->
-            <div id="supervisor-profile-screen" class="screen">
-                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Perfil do Supervisor</h2>
-                <form id="supervisor-password-form" class="space-y-4 max-w-md mx-auto">
-                    <h3 class="font-semibold text-lg">Alterar Senha</h3>
-                    <input type="password" id="current-password" placeholder="Senha Atual" class="input-field" required>
-                    <input type="password" id="new-password" placeholder="Nova Senha" class="input-field" required>
-                    <input type="password" id="confirm-new-password" placeholder="Confirmar Nova Senha" class="input-field" required>
-                    <p id="password-change-error" class="text-red-500 text-sm hidden"></p>
-                    <p id="password-change-success" class="text-green-500 text-sm hidden">Senha alterada com sucesso!</p>
-                    <button type="submit" class="btn btn-primary">Salvar Nova Senha</button>
-                    <button type="button" onclick="app.showScreen('supervisor-dashboard-screen')" class="btn bg-gray-500 hover:bg-gray-600">Voltar</button>
-                </form>
+            <!-- Supervisor: Change Password Screen -->
+            <div id="supervisor-password-change" class="hidden bg-white p-8 rounded-lg shadow-lg">
+                 <h2 class="text-2xl font-bold text-ifba-green-dark mb-6 text-center">Alterar Senha</h2>
+                 <input type="password" id="currentSupervisorPassword" placeholder="Senha Atual" class="w-full p-3 mb-4 border border-gray-300 rounded-md">
+                 <input type="password" id="newSupervisorPassword" placeholder="Nova Senha" class="w-full p-3 mb-4 border border-gray-300 rounded-md">
+                 <input type="password" id="confirmNewSupervisorPassword" placeholder="Confirmar Nova Senha" class="w-full p-3 mb-4 border border-gray-300 rounded-md">
+                 <p id="password-change-error" class="text-red-500 text-sm mb-4 hidden"></p>
+                 <p id="password-change-success" class="text-green-600 text-sm mb-4 hidden"></p>
+                 <button onclick="changeSupervisorPassword()" class="w-full p-3 rounded-md text-white font-semibold btn-3d btn-green">Salvar Nova Senha</button>
+                 <button onclick="showScreen('supervisor-dashboard')" class="mt-4 w-full text-center text-gray-600 hover:underline">Voltar</button>
             </div>
 
-
+            <!-- Supervisor: Manage Logos Screen -->
+            <div id="manage-logos-screen" class="hidden bg-white p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Gerenciar Logos</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-2">Logo Esquerdo</h3>
+                        <input type="file" id="logoLeftFile" accept="image/*" class="w-full p-2 border rounded-md mb-2">
+                        <img id="logoLeftPreview" src="https://placehold.co/200x70?text=Preview" alt="Preview Logo Esquerdo" class="w-full border p-2 rounded-md">
+                    </div>
+                     <div>
+                        <h3 class="text-lg font-semibold mb-2">Logo Direito</h3>
+                        <input type="file" id="logoRightFile" accept="image/*" class="w-full p-2 border rounded-md mb-2">
+                        <img id="logoRightPreview" src="https://placehold.co/200x70?text=Preview" alt="Preview Logo Direito" class="w-full border p-2 rounded-md">
+                    </div>
+                </div>
+                <button onclick="saveLogos()" class="w-full mt-6 p-3 rounded-md text-white font-semibold btn-3d btn-green">Salvar Logos</button>
+                <button onclick="showScreen('supervisor-dashboard')" class="mt-4 w-full text-center text-gray-600 hover:underline">Voltar</button>
+            </div>
+            
         </main>
     </div>
 
-    <!-- Modals -->
-    <div id="connection-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h2 class="text-xl font-bold mb-4 text-ifba-green-dark">Desembarque Registrado!</h2>
-            <p class="mb-6 text-gray-700">Sua viagem incluirá uma conexão com outro ônibus?</p>
-            <div class="flex justify-around">
-                <button onclick="app.handleConnectionResponse(true)" class="btn btn-primary px-8">Sim</button>
-                <button onclick="app.handleConnectionResponse(false)" class="btn btn-secondary px-8">Não</button>
-            </div>
-        </div>
-    </div>
-    
-    <div id="summary-modal" class="modal-overlay hidden">
-         <div id="summary-content" class="modal-content !max-w-xl w-full">
-            <h2 class="text-2xl font-bold text-ifba-green-dark mb-4">Resumo da Viagem</h2>
-            <div class="grid grid-cols-2 gap-4 text-left">
-                <div class="bg-gray-100 p-3 rounded-lg">
-                    <p class="text-sm text-gray-500">Tempo de Espera</p>
-                    <p id="summary-wait-time" class="text-2xl font-bold text-ifba-accent-gold">00:00</p>
-                </div>
-                 <div class="bg-gray-100 p-3 rounded-lg">
-                    <p class="text-sm text-gray-500">Tempo de Viagem</p>
-                    <p id="summary-trip-time" class="text-2xl font-bold text-ifba-green-dark">00:00</p>
-                </div>
-                 <div class="bg-gray-100 p-3 rounded-lg col-span-2">
-                    <p class="text-sm text-gray-500">Tempo Total</p>
-                    <p id="summary-total-time" class="text-3xl font-bold text-ifba-green-light">00:00</p>
-                </div>
-                 <div class="bg-gray-100 p-3 rounded-lg">
-                    <p class="text-sm text-gray-500">Distância Percorrida</p>
-                    <p id="summary-distance" class="text-xl font-semibold">~0.0 km</p>
-                </div>
-                 <div class="bg-gray-100 p-3 rounded-lg">
-                    <p class="text-sm text-gray-500">Custo da Viagem</p>
-                    <p id="summary-cost" class="text-xl font-semibold">R$ 0,00</p>
-                </div>
-            </div>
-            <p class="text-xs text-gray-400 mt-4">Este resumo fechará automaticamente.</p>
-        </div>
-    </div>
-    
     <script>
-    // Lucide Icons activation
-    lucide.createIcons();
+    // --- Application State and Configuration ---
+    let appState = {
+        currentScreen: 'initial-screen',
+        currentUser: null,
+        currentTrip: null,
+        tripInterval: null,
+        waitingInterval: null,
+        summaryTimeout: null,
+        map: null,
+        userMarker: null,
+        busMarker: null,
+        routePolyline: null,
+        db: null,
+        auth: null,
+        userId: null,
+    };
+    
+    // IFBA Campus Coordinates
+    const IFBA_CAMPUS_COORDS = { lat: -9.450303676457963, lng: -40.52378313230595 };
 
-    const app = {
-        // STATE MANAGEMENT
-        state: {
-            currentUser: null,
-            currentScreen: 'initial-screen',
-            trip: {
-                isActive: false,
-                isWaiting: false,
-                startTime: null,
-                waitTime: 0,
-                waitStartTime: null,
-                tripStartTime: null,
-                legs: [], // To store each part of the journey { line, waitTime, tripTime, cost, distance }
-            },
-            timers: {
-                wait: null,
-                trip: null,
-            },
-            map: null,
-            busMarker: null,
-        },
+    // --- Firebase Initialization ---
+    // IMPORTANT: Replace with your actual Firebase config
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_AUTH_DOMAIN",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+
+    function initializeFirebase() {
+        // In a real environment, __firebase_config would be provided.
+        const effectiveConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : firebaseConfig;
         
-        // DATABASE (Simulated with localStorage and in-memory data)
-        db: {
-            supervisorCreds: {
-                login: 'Logistica2025.1',
-                pass: '@#Log!20252'
-            },
-            busLines: [
-                { id: 1, name: "102 João Paulo II - Residencial Brisa da Serra", cost: 2.50 },
-                { id: 2, name: "106 Piranga", cost: 2.50 },
-                { id: 3, name: "200 Dom José Rodrigues", cost: 2.50 },
-                { id: 4, name: "202 Residencial Doutor Humberto Martins", cost: 2.50 },
-                { id: 5, name: "203 Kidé", cost: 2.50 },
-                { id: 6, name: "204 Circular Itaberaba", cost: 2.50 },
-                { id: 7, name: "205 Tancredo Neves - Castelo Branco", cost: 2.50 },
-                { id: 8, name: "206 Residencial Praia do Rodeadouro", cost: 2.50 },
-                { id: 9, name: "207 Residencial São Francisco", cost: 2.50 },
-                { id: 10, name: "208 Jardim Primavera", cost: 2.50 },
-                { id: 11, name: "209 Carnaíba do Sertão", cost: 2.50 },
-                { id: 12, name: "210 Rodeadouro", cost: 2.50 },
-                { id: 13, name: "211 Curral Novo - Sabiá", cost: 2.50 },
-                { id: 14, name: "401 Juazeiro - Petrolina via Centro", cost: 2.50 },
-                { id: 15, name: "402 Juazeiro - Petrolina / Areia Branca", cost: 2.50 },
-                { id: 16, name: "405 Juazeiro - Sobradinho", cost: 2.50 },
-                { id: 17, name: "414 Juazeiro - Petrolina - IF Sertão", cost: 2.50 },
-                { id: 18, name: "416 Juazeiro - Petrolina - Expresso", cost: 2.50 },
-                { id: 19, name: "420 Juá Garden - Petrolina - Areia Branca", cost: 2.50 },
-            ],
-            liveBuses: {}, // Simulates real-time data: { lineName: { lastBoardedTime: timestamp } }
-            
-            save(key, data) {
-                localStorage.setItem(`mobilis_${key}`, JSON.stringify(data));
-            },
-            load(key) {
-                const data = localStorage.getItem(`mobilis_${key}`);
-                return data ? JSON.parse(data) : null;
-            },
-        },
+        try {
+            const app = window.firebase.initializeApp(effectiveConfig);
+            appState.db = window.firebase.getFirestore(app);
+            appState.auth = window.firebase.getAuth(app);
+            console.log("Firebase initialized.");
+            setupAuthListener();
+        } catch (error) {
+            console.error("Firebase initialization failed:", error);
+            // Show an error to the user that the app cannot connect to its services.
+        }
+    }
 
-        // INITIALIZATION
-        init() {
-            // Check for logged in user
-            this.state.currentUser = this.db.load('currentUser');
-            const storedLines = this.db.load('busLines');
-            if (storedLines) this.db.busLines = storedLines;
-            
-            const storedCreds = this.db.load('supervisorCreds');
-            if (storedCreds) {
-                this.db.supervisorCreds = storedCreds;
-            } else {
-                this.db.save('supervisorCreds', this.db.supervisorCreds);
-            }
-
-            const liveBusesData = this.db.load('liveBuses');
-            if (liveBusesData) {
-                this.db.liveBuses = liveBusesData;
-            }
-
-            if (this.state.currentUser) {
-                if(this.state.currentUser.type === 'supervisor'){
-                    this.showScreen('supervisor-dashboard-screen');
-                } else {
-                    this.showScreen('user-main-screen');
+    async function setupAuthListener() {
+        window.firebase.onAuthStateChanged(appState.auth, async (user) => {
+            if (user) {
+                appState.userId = user.uid;
+                console.log("User is signed in with UID:", appState.userId);
+                // If the user has a profile, load it.
+                const userDoc = await window.firebase.getDoc(window.firebase.doc(appState.db, "users", appState.userId));
+                if (userDoc.exists()) {
+                    appState.currentUser = userDoc.data();
+                    if (appState.currentUser.profile === 'student') {
+                        setupUserInterface(appState.currentUser.name);
+                        loadUserHistory();
+                    }
                 }
             } else {
-                this.showScreen('initial-screen');
+                console.log("User is signed out.");
+                appState.currentUser = null;
+                appState.userId = null;
+                showScreen('initial-screen');
             }
+        });
 
-            this.populateBusLines();
-            this.setupEventListeners();
-            console.log("Mobilis App Initialized");
-        },
+        // Sign in automatically (for this demo app context)
+        try {
+             if (typeof __initial_auth_token !== 'undefined') {
+                await window.firebase.signInWithCustomToken(appState.auth, __initial_auth_token);
+             } else {
+                await window.firebase.signInAnonymously(appState.auth);
+             }
+        } catch (error) {
+            console.error("Anonymous sign-in failed:", error);
+        }
+    }
 
-        // UI & NAVIGATION
-        showScreen(screenId) {
-            document.querySelectorAll('.screen').forEach(screen => {
-                screen.classList.remove('active-screen');
-            });
-            document.getElementById(screenId).classList.add('active-screen');
-            this.state.currentScreen = screenId;
-            window.scrollTo(0, 0);
+    // --- UI Navigation ---
+    function showScreen(screenId) {
+        document.querySelectorAll('#content-area > div').forEach(screen => {
+            screen.classList.add('hidden');
+        });
+        document.getElementById(screenId).classList.remove('hidden');
+        appState.currentScreen = screenId;
+    }
 
-            // Handle screen-specific logic
-            if (screenId === 'user-main-screen') {
-                this.updateUserUI();
-            } else if (screenId === 'supervisor-dashboard-screen') {
-                document.getElementById('supervisor-header').classList.remove('hidden');
-                document.getElementById('supervisor-header').classList.add('flex');
-                this.renderSupervisorDashboard();
-                this.loadLogos();
-            } else if (screenId === 'manage-lines-screen') {
-                this.renderLinesList();
-            } else if (screenId === 'user-history-screen') {
-                this.renderHistory();
-            }
-            
-            if(screenId !== 'supervisor-dashboard-screen') {
-                // hide supervisor header for non-supervisor screens
-                 if(!document.getElementById('supervisor-header').classList.contains('hidden')){
-                    document.getElementById('supervisor-header').classList.add('hidden');
-                    document.getElementById('supervisor-header').classList.remove('flex');
-                 }
-            }
-        },
+    // --- Initial Data ---
+    let busLines = [
+        { id: 1, prefix: '102', route: 'João Paulo II - Residencial Brisa da Serra', cost: 2.50 },
+        { id: 2, prefix: '106', route: 'Piranga', cost: 2.50 },
+        { id: 3, prefix: '200', route: 'Dom José Rodrigues', cost: 2.50 },
+        { id: 4, prefix: '202', route: 'Residencial Doutor Humberto Martins', cost: 2.50 },
+        { id: 5, prefix: '203', route: 'Kidé', cost: 2.50 },
+        { id: 6, prefix: '204', route: 'Circular Itaberaba', cost: 2.50 },
+        { id: 7, prefix: '205', route: 'Tancredo Neves - Castelo Branco', cost: 2.50 },
+        { id: 8, prefix: '206', route: 'Residencial Praia do Rodeadouro', cost: 2.50 },
+        { id: 9, prefix: '207', route: 'Residencial São Francisco', cost: 2.50 },
+        { id: 10, prefix: '208', route: 'Jardim Primavera', cost: 2.50 },
+        { id: 11, prefix: '209', route: 'Carnaíba do Sertão', cost: 2.50 },
+        { id: 12, prefix: '210', route: 'Rodeadouro', cost: 2.50 },
+        { id: 13, prefix: '211', route: 'Curral Novo - Sabiá', cost: 2.50 },
+        { id: 14, prefix: '401', route: 'Juazeiro - Petrolina via Centro', cost: 2.50 },
+        { id: 15, prefix: '402', route: 'Juazeiro - Petrolina / Areia Branca', cost: 2.50 },
+        { id: 16, prefix: '405', route: 'Juazeiro - Sobradinho', cost: 2.50 },
+        { id: 17, prefix: '414', route: 'Juazeiro - Petrolina - IF Sertão', cost: 2.50 },
+        { id: 18, prefix: '416', route: 'Juazeiro - Petrolina - Expresso', cost: 2.50 },
+        { id: 19, prefix: '420', route: 'Juá Garden - Petrolina - Areia Branca', cost: 2.50 },
+    ];
+    
+    const ratingCriteria = {
+        bus: [
+            { id: 'cleanliness', label: 'Limpeza do veículo' },
+            { id: 'driver_treatment', label: 'Tratamento do motorista/cobrador' },
+            { id: 'traffic_speed', label: 'Velocidade de tráfego' },
+            { id: 'crowding', label: 'Lotação do ônibus' }
+        ],
+        stop: [
+            { id: 'access_ramp', label: 'Rampa de acesso' },
+            { id: 'coverage', label: 'Cobertura do ponto' },
+            { id: 'lighting', label: 'Iluminação do ponto' },
+            { id: 'accessible_floor', label: 'Piso com acessibilidade' },
+            { id: 'signaling', label: 'Sinalização' },
+            { id: 'security', label: 'Segurança' }
+        ]
+    };
 
-        setupEventListeners() {
-            document.getElementById('user-register-form').addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handleUserRegister();
-            });
-            document.getElementById('supervisor-login-form').addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handleSupervisorLogin();
-            });
-            document.getElementById('supervisor-password-form').addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.handleChangeSupervisorPassword();
-            });
-             document.getElementById('supervisor-period-filter').addEventListener('change', (e) => {
-                document.getElementById('custom-date-filter').classList.toggle('hidden', e.target.value !== 'custom');
-                this.renderSupervisorDashboard();
-            });
-            ['start-date', 'end-date'].forEach(id => {
-                 document.getElementById(id).addEventListener('change', () => this.renderSupervisorDashboard());
-            });
-            ['logo-left-upload', 'logo-right-upload'].forEach(id => {
-                document.getElementById(id).addEventListener('change', (e) => this.previewLogo(e));
-            });
-        },
+    const ratingOptions = [
+        { value: 1, label: 'Ruim', emoji: '😠' },
+        { value: 2, label: 'Insatisfeito', emoji: '😞' },
+        { value: 3, label: 'Razoável', emoji: '😐' },
+        { value: 4, label: 'Neutro', emoji: '🙂' },
+        { value: 5, label: 'Satisfeito', emoji: '😊' },
+        { value: 6, label: 'Plenamente Satisfeito', emoji: '😍' }
+    ];
+
+    function populateBusLines() {
+        const select = document.getElementById('bus-line-select');
+        select.innerHTML = '<option value="" disabled selected>Selecione uma linha...</option>';
+        busLines.forEach(line => {
+            const option = document.createElement('option');
+            option.value = line.id;
+            option.textContent = `${line.prefix} - ${line.route}`;
+            select.appendChild(option);
+        });
+    }
+    
+    function createRatingControls(containerId, criteria) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        criteria.forEach(item => {
+            const fieldset = document.createElement('fieldset');
+            fieldset.className = 'border p-3 rounded-md';
+            fieldset.innerHTML = `<legend class="px-2 font-medium text-gray-700">${item.label}</legend>
+                <div class="flex justify-around flex-wrap gap-2" data-criteria="${item.id}">
+                    ${ratingOptions.map(opt => `
+                        <label class="flex flex-col items-center cursor-pointer text-center">
+                            <input type="radio" name="${item.id}" value="${opt.value}" class="hidden peer">
+                            <span class="text-3xl p-1 rounded-full peer-checked:bg-yellow-200 transition-colors">${opt.emoji}</span>
+                            <span class="text-xs mt-1 text-gray-600">${opt.label}</span>
+                        </label>
+                    `).join('')}
+                </div>`;
+            container.appendChild(fieldset);
+        });
+    }
+
+    // --- Authentication ---
+    async function loginUser() {
+        const name = document.getElementById('userName').value.trim();
+        const course = document.getElementById('userCourse').value;
+        const errorEl = document.getElementById('user-error');
         
-        // AUTHENTICATION
-        handleUserRegister() {
-            const fullname = document.getElementById('user-fullname').value;
-            const course = document.getElementById('user-course').value;
-            if (!fullname || !course) {
-                alert("Por favor, preencha todos os campos.");
-                return;
-            }
-            this.state.currentUser = { 
-                name: fullname, 
-                course: course, 
-                type: 'user',
-                history: this.state.currentUser?.history || [] 
-            };
-            this.db.save('currentUser', this.state.currentUser);
-            this.showScreen('user-main-screen');
-        },
+        if (!name || !course) {
+            errorEl.textContent = 'Por favor, preencha todos os campos.';
+            errorEl.classList.remove('hidden');
+            return;
+        }
+        errorEl.classList.add('hidden');
 
-        handleSupervisorLogin() {
-            const login = document.getElementById('supervisor-login').value;
-            const pass = document.getElementById('supervisor-password').value;
-            const errorEl = document.getElementById('supervisor-login-error');
-            
-            const creds = this.db.supervisorCreds;
-
-            // DEBUG: Verifique o console do navegador (F12) para ver as credenciais esperadas.
-            // Se as "Credenciais esperadas" estiverem erradas, limpe o cache do seu navegador para este site.
-            console.log("Tentativa de login com:", { login: login, pass: pass });
-            console.log("Credenciais esperadas pelo sistema:", creds);
-
-            if (login === creds.login && pass === creds.pass) {
-                errorEl.classList.add('hidden');
-                this.state.currentUser = { name: 'Admin', type: 'supervisor' };
-                this.db.save('currentUser', this.state.currentUser);
-                this.showScreen('supervisor-dashboard-screen');
-            } else {
-                errorEl.classList.remove('hidden');
-            }
-        },
-
-        logout() {
-            this.state.currentUser = null;
-            this.state.trip = { isActive: false, isWaiting: false, legs: [] };
-            clearInterval(this.state.timers.wait);
-            clearInterval(this.state.timers.trip);
-            localStorage.removeItem('mobilis_currentUser');
-            this.showScreen('initial-screen');
-        },
+        appState.currentUser = { name, course, profile: 'student' };
         
-        // USER TRIP FLOW
-        updateUserUI() {
-            if (!this.state.currentUser) return;
-            document.getElementById('user-greeting-name').textContent = this.state.currentUser.name.split(' ')[0];
+        // Save user profile to Firestore
+        try {
+            await window.firebase.setDoc(window.firebase.doc(appState.db, "users", appState.userId), appState.currentUser);
+            console.log("User profile saved.");
+            setupUserInterface(name);
+        } catch (error) {
+            console.error("Error saving user profile: ", error);
+            errorEl.textContent = 'Erro ao salvar perfil. Tente novamente.';
+            errorEl.classList.remove('hidden');
+        }
+    }
 
-            document.getElementById('select-line-step').classList.toggle('hidden', this.state.trip.isWaiting || this.state.trip.isActive);
-            document.getElementById('waiting-step').classList.toggle('hidden', !this.state.trip.isWaiting);
-            document.getElementById('trip-step').classList.toggle('hidden', !this.state.trip.isActive);
-            
-            document.getElementById('user-map-container').classList.toggle('hidden', !this.state.trip.isActive);
-            document.getElementById('trip-info-banner').classList.toggle('hidden', !this.state.trip.isActive);
+    function setupUserInterface(name) {
+        document.getElementById('display-user-name').textContent = name;
+        showScreen('main-user-interface');
+        loadUserHistory();
+    }
+    
+    function loginSupervisor() {
+        const login = document.getElementById('supervisorLogin').value;
+        const password = document.getElementById('supervisorPassword').value;
+        const errorEl = document.getElementById('supervisor-error');
+        
+        // This should be replaced with a secure server-side check
+        console.log("Attempting login with:", { login, password });
+        console.log("Expected credentials:", { login: "Logistica2025.1", password: "@#Log!20252" });
 
-            if (this.state.trip.isActive && !this.state.map) {
-                this.initMap();
-            }
-        },
+        if (login === 'Logistica2025.1' && password === '@#Log!20252') {
+            errorEl.classList.add('hidden');
+            appState.currentUser = { name: 'Supervisor', profile: 'supervisor' };
+            showScreen('supervisor-dashboard');
+            initializeDashboard();
+            loadLogos();
+        } else {
+            errorEl.textContent = 'Login ou senha inválidos.';
+            errorEl.classList.remove('hidden');
+        }
+    }
 
-        populateBusLines() {
-            const select = document.getElementById('bus-line-select');
-            select.innerHTML = '<option value="" disabled selected>Escolha uma linha...</option>';
-            this.db.busLines.forEach(line => {
-                const option = document.createElement('option');
-                option.value = line.name;
-                option.textContent = line.name;
-                select.appendChild(option);
-            });
-        },
+    function logout() {
+        appState.currentUser = null;
+        // In a real app with proper auth, you'd call signOut here.
+        // window.firebase.signOut(appState.auth);
+        clearInterval(appState.tripInterval);
+        clearInterval(appState.waitingInterval);
+        clearTimeout(appState.summaryTimeout);
+        showScreen('initial-screen');
+         // Hide supervisor logos when logging out
+        document.getElementById('supervisorLogoLeft').classList.add('hidden');
+        document.getElementById('supervisorLogoRight').classList.add('hidden');
+    }
 
-        toggleManualLineEntry() {
-            const select = document.getElementById('bus-line-select');
-            const manual = document.getElementById('bus-line-manual');
-            select.classList.toggle('hidden');
-            manual.classList.toggle('hidden');
-            if (!manual.classList.contains('hidden')) {
-                manual.focus();
-            }
-        },
-
-        startWait() {
-            const selectedLine = document.getElementById('bus-line-select').value;
-            const manualLine = document.getElementById('bus-line-manual').value;
-            const line = manualLine || selectedLine;
-
-            if (!line) {
-                alert("Por favor, selecione ou informe uma linha de ônibus.");
-                return;
-            }
-            
-            const currentLeg = { line, cost: this.db.busLines.find(l => l.name === line)?.cost || 2.50 };
-            this.state.trip.legs.push(currentLeg);
-
-            // Check for live bus info from other users
-            const liveBusInfo = this.db.liveBuses[line];
-            const etaDisplay = document.getElementById('wait-eta-display');
-            // Check if last boarding was within a reasonable time (e.g., 20 minutes)
-            if (liveBusInfo && (Date.now() - liveBusInfo.lastBoardedTime < 20 * 60 * 1000)) {
-                const minutesAgo = Math.round((Date.now() - liveBusInfo.lastBoardedTime) / 60000);
-                if(minutesAgo === 0){
-                    etaDisplay.textContent = `Previsão: Um ônibus acabou de passar no último ponto registrado.`;
-                } else {
-                    etaDisplay.textContent = `Previsão: Um ônibus passou há ~${minutesAgo} min no último ponto registrado.`;
-                }
-                etaDisplay.classList.remove('hidden');
+    // --- User Journey ---
+    function getCurrentLocation() {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error('Geolocalização não é suportada pelo seu navegador.'));
             } else {
-                etaDisplay.classList.add('hidden');
-            }
-
-            // Get Geolocation
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(position => {
-                    currentLeg.startCoords = {
+                navigator.geolocation.getCurrentPosition(
+                    position => resolve({
                         lat: position.coords.latitude,
                         lng: position.coords.longitude
-                    };
-                    console.log("Ponto de espera registrado:", currentLeg.startCoords);
-                }, () => {
-                    console.warn("Não foi possível obter a geolocalização. Continuando sem coordenadas.");
-                });
+                    }),
+                    () => reject(new Error('Não foi possível obter sua localização.'))
+                );
             }
+        });
+    }
 
-            this.state.trip.isWaiting = true;
-            this.state.trip.waitStartTime = Date.now();
-            this.state.timers.wait = setInterval(() => this.updateTimer('wait'), 1000);
-            this.updateUserUI();
-        },
+    async function startWaiting() {
+        const selectedLineId = document.getElementById('bus-line-select').value;
+        const manualLine = document.getElementById('bus-line-manual').value.trim();
+        const errorEl = document.getElementById('bus-line-error');
 
-        startTrip() {
-            clearInterval(this.state.timers.wait);
-            const leg = this.state.trip.legs[this.state.trip.legs.length - 1];
-            leg.waitTime = Math.round((Date.now() - this.state.trip.waitStartTime) / 1000);
+        let line;
+        if (selectedLineId) {
+            line = busLines.find(l => l.id == selectedLineId);
+        } else if (manualLine) {
+            // Simple logic for manual entry, could be improved
+            line = { id: `manual_${Date.now()}`, prefix: manualLine, route: 'Rota manual', cost: 2.50 };
+        }
 
-            // Update live bus status for other users to see
-            this.db.liveBuses[leg.line] = { lastBoardedTime: Date.now() };
-            this.db.save('liveBuses', this.db.liveBuses);
+        if (!line) {
+            errorEl.textContent = 'Por favor, selecione ou digite uma linha.';
+            errorEl.classList.remove('hidden');
+            return;
+        }
+        errorEl.classList.add('hidden');
 
-            this.state.trip.isWaiting = false;
-            this.state.trip.isActive = true;
-            this.state.trip.tripStartTime = Date.now();
-            this.state.timers.trip = setInterval(() => this.updateTimer('trip'), 1000);
-            this.updateUserUI();
-        },
-
-        endTrip() {
-            clearInterval(this.state.timers.trip);
-            const leg = this.state.trip.legs[this.state.trip.legs.length - 1];
-            leg.tripTime = Math.round((Date.now() - this.state.trip.tripStartTime) / 1000);
-            leg.distance = Math.random() * 10 + 2; // Simulating distance
-
-            this.state.trip.isActive = false;
+        try {
+            const location = await getCurrentLocation();
             
-            if (this.state.map) {
-                this.state.map.remove();
-                this.state.map = null;
-            }
-
-            document.getElementById('connection-modal').classList.remove('hidden');
-        },
-        
-        handleConnectionResponse(isConnecting) {
-            document.getElementById('connection-modal').classList.add('hidden');
-            if (isConnecting) {
-                // Reset for the next leg, but keep trip data
-                this.state.trip.isWaiting = false;
-                this.state.trip.isActive = false;
-                document.getElementById('wait-timer-display').textContent = '00:00';
-                document.getElementById('trip-timer-display').textContent = '00:00';
-                this.updateUserUI();
-            } else {
-                // End of entire journey, go to evaluation
-                this.showScreen('evaluation-screen');
-                this.renderEvaluationForms();
-            }
-        },
-        
-        renderEvaluationForms() {
-            const container = document.getElementById('evaluation-forms-container');
-            container.innerHTML = ''; // Clear previous forms
-            const emojis = ['😡', '😠', '😐', '🙂', '😄', '🤩'];
-            const labels = ['Ruim', 'Insatisfeito', 'Razoável', 'Neutro', 'Satisfeito', 'Plenamente Satisfeito'];
-
-            const busCriteria = [
-                { id: 'limpeza', text: 'Limpeza do veículo' },
-                { id: 'tratamento', text: 'Tratamento do motorista/cobrador' },
-                { id: 'velocidade', text: 'Velocidade de tráfego' },
-                { id: 'lotacao', text: 'Lotação do ônibus' }
-            ];
-
-            const stopCriteria = [
-                { id: 'rampa_acesso', text: 'Rampa de acesso' },
-                { id: 'cobertura', text: 'Cobertura do ponto' },
-                { id: 'iluminacao', text: 'Iluminação' },
-                { id: 'piso_acessivel', text: 'Piso com acessibilidade' },
-                { id: 'sinalizacao', text: 'Sinalização' },
-                { id: 'seguranca', text: 'Segurança' }
-            ];
-
-            const createEvaluationSection = (criteria, legIndex, namePrefix) => {
-                return criteria.map(c => `
-                    <div class="mb-4">
-                        <label class="font-semibold text-gray-700">${c.text}</label>
-                        <div class="flex justify-between items-center mt-2 space-x-1">
-                            ${[...Array(6).keys()].map(i => `
-                                <label class="text-center cursor-pointer">
-                                    <input type="radio" name="${namePrefix}-${legIndex}-${c.id}" value="${i+1}" class="hidden peer">
-                                    <span class="text-3xl grayscale peer-checked:grayscale-0 transition-transform transform peer-checked:scale-125">${emojis[i]}</span>
-                                    <p class="text-xs text-gray-500">${labels[i]}</p>
-                                </label>
-                            `).join('')}
-                        </div>
-                    </div>
-                `).join('');
+            appState.currentTrip = {
+                id: `trip_${Date.now()}`,
+                userId: appState.userId,
+                lineId: line.id,
+                lineName: `${line.prefix} - ${line.route}`,
+                lineCost: line.cost,
+                events: [],
+                status: 'waiting',
             };
             
-            this.state.trip.legs.forEach((leg, index) => {
-                const formHTML = `
-                <div class="mb-8 p-4 border rounded-lg bg-gray-50">
-                    <h3 class="font-bold text-lg text-ifba-green-dark mb-4">Avaliação do Ponto de Embarque (${leg.line})</h3>
-                    ${createEvaluationSection(stopCriteria, index, 'stop')}
-                </div>
-                <div class="mb-8 p-4 border rounded-lg bg-gray-50">
-                    <h3 class="font-bold text-lg text-ifba-green-dark mb-4">Avaliação do Ônibus (${leg.line})</h3>
-                    ${createEvaluationSection(busCriteria, index, 'bus')}
-                </div>
-                `;
-                container.innerHTML += formHTML;
+            appState.currentTrip.events.push({
+                type: 'start_wait',
+                timestamp: new Date().toISOString(),
+                location: { lat: location.lat, lng: location.lng }
             });
-        },
-        
-        submitEvaluation() {
-            // In a real app, collect form data and send to a server
-            console.log("Avaliação submetida.");
-            this.finalizeTrip();
-        },
 
-        finalizeTrip() {
-            const totalWaitTime = this.state.trip.legs.reduce((sum, leg) => sum + leg.waitTime, 0);
-            const totalTripTime = this.state.trip.legs.reduce((sum, leg) => sum + leg.tripTime, 0);
-            const totalCost = this.state.trip.legs.reduce((sum, leg) => sum + leg.cost, 0);
-            const totalDistance = this.state.trip.legs.reduce((sum, leg) => sum + leg.distance, 0);
+            document.getElementById('waiting-bus-line').textContent = appState.currentTrip.lineName;
+            showScreen('journey-waiting');
 
-            const tripSummary = {
-                date: new Date().toISOString(),
-                totalWaitTime,
-                totalTripTime,
-                totalCost,
-                totalDistance,
-                legs: this.state.trip.legs,
-            };
-
-            this.state.currentUser.history.unshift(tripSummary);
-            if (this.state.currentUser.history.length > 30) {
-                this.state.currentUser.history.pop();
-            }
-            this.db.save('currentUser', this.state.currentUser);
-
-            // Show summary modal
-            document.getElementById('summary-wait-time').textContent = this.formatTime(totalWaitTime);
-            document.getElementById('summary-trip-time').textContent = this.formatTime(totalTripTime);
-            document.getElementById('summary-total-time').textContent = this.formatTime(totalWaitTime + totalTripTime);
-            document.getElementById('summary-distance').textContent = `~${totalDistance.toFixed(1)} km`;
-            document.getElementById('summary-cost').textContent = `R$ ${totalCost.toFixed(2)}`;
-            document.getElementById('summary-modal').classList.remove('hidden');
-
-            setTimeout(() => {
-                document.getElementById('summary-modal').classList.add('hidden');
-                this.resetTripState();
-                this.showScreen('user-main-screen');
-            }, 5000); // Increased display time to 5s for readability
-        },
-
-        resetTripState() {
-             this.state.trip = {
-                isActive: false,
-                isWaiting: false,
-                startTime: null,
-                waitTime: 0,
-                waitStartTime: null,
-                tripStartTime: null,
-                legs: [],
-            };
-            document.getElementById('wait-timer-display').textContent = '00:00';
-            document.getElementById('trip-timer-display').textContent = '00:00';
-            this.updateUserUI();
-        },
-
-        renderHistory() {
-            const historyList = document.getElementById('history-list');
-            historyList.innerHTML = '';
-            if (!this.state.currentUser.history || this.state.currentUser.history.length === 0) {
-                historyList.innerHTML = '<p class="text-gray-500 text-center">Nenhuma viagem registrada.</p>';
-                return;
-            }
-            this.state.currentUser.history.forEach(trip => {
-                const tripDate = new Date(trip.date);
-                const item = document.createElement('div');
-                item.className = 'p-4 border rounded-lg bg-gray-50';
-                item.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <p class="font-bold text-ifba-green-dark">${trip.legs.map(l => l.line).join(' + ')}</p>
-                            <p class="text-sm text-gray-500">${tripDate.toLocaleDateString('pt-BR')} - ${tripDate.toLocaleTimeString('pt-BR')}</p>
-                        </div>
-                        <div class="text-right">
-                           <p class="font-semibold">Total: ${this.formatTime(trip.totalWaitTime + trip.totalTripTime)}</p>
-                           <p class="text-sm">Custo: R$ ${trip.totalCost.toFixed(2)}</p>
-                        </div>
-                    </div>
-                `;
-                historyList.appendChild(item);
-            });
-        },
-        
-        // TIMERS & UTILITIES
-        updateTimer(type) {
-            const startTime = type === 'wait' ? this.state.trip.waitStartTime : this.state.trip.tripStartTime;
-            const elapsed = Math.floor((Date.now() - startTime) / 1000);
-            const displayId = type === 'wait' ? 'wait-timer-display' : 'trip-timer-display';
-            document.getElementById(displayId).textContent = this.formatTime(elapsed);
-        },
-
-        formatTime(seconds) {
-            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
-            const secs = (seconds % 60).toString().padStart(2, '0');
-            return `${mins}:${secs}`;
-        },
-
-        // MAP FUNCTIONALITY (LeafletJS)
-        initMap() {
-            // Using IFBA Juazeiro coordinates
-            const ifbaCoords = [-9.450303676457963, -40.52378313230595];
-            this.state.map = L.map('user-map').setView(ifbaCoords, 15);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(this.state.map);
-
-            // Add IFBA marker
-            L.marker(ifbaCoords).addTo(this.state.map).bindPopup("<b>IFBA Juazeiro</b>").openPopup();
-            
-            // Simulate bus route
-            const startPoint = [-9.41, -40.52]; // Simulated starting point
-            this.state.busMarker = L.marker(startPoint).addTo(this.state.map);
-            const routeLine = L.polyline([startPoint, ifbaCoords]).addTo(this.state.map);
-            this.state.map.fitBounds(routeLine.getBounds());
-
-            // Simulate bus movement
-            let progress = 0;
-            const simulationInterval = setInterval(() => {
-                if (!this.state.trip.isActive) {
-                    clearInterval(simulationInterval);
-                    return;
-                }
-                progress += 0.01; // speed of simulation
-                if (progress > 1) progress = 1;
-                
-                const newLat = startPoint[0] + (ifbaCoords[0] - startPoint[0]) * progress;
-                const newLng = startPoint[1] + (ifbaCoords[1] - startPoint[1]) * progress;
-                this.state.busMarker.setLatLng([newLat, newLng]);
-                
-                const etaSeconds = (1 - progress) * 15 * 60; // Simulate 15 min trip
-                document.getElementById('trip-eta-display').textContent = this.formatTime(Math.round(etaSeconds));
-                
-                if (progress >= 1) clearInterval(simulationInterval);
+            let seconds = 0;
+            const timerEl = document.getElementById('waiting-timer');
+            appState.waitingInterval = setInterval(() => {
+                seconds++;
+                const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+                const secs = (seconds % 60).toString().padStart(2, '0');
+                timerEl.textContent = `${mins}:${secs}`;
             }, 1000);
-        },
+
+            await checkETA(line.id);
+
+        } catch (error) {
+            errorEl.textContent = error.message;
+            errorEl.classList.remove('hidden');
+        }
+    }
+
+    async function checkETA(lineId) {
+        const etaInfo = document.getElementById('eta-info');
+        const etaMessage = document.getElementById('eta-message');
+        etaInfo.classList.add('hidden');
+
+        try {
+            // Check Firestore for a recent "start_trip" event on the same line
+            const q = window.firebase.query(
+                window.firebase.collection(appState.db, "realtime_bus"),
+                window.firebase.where("lineId", "==", lineId)
+            );
+            const querySnapshot = await window.firebase.getDocs(q);
+
+            if (!querySnapshot.empty) {
+                const busDoc = querySnapshot.docs[0].data();
+                const lastSeenTime = new Date(busDoc.timestamp);
+                const now = new Date();
+                const diffMinutes = Math.round((now - lastSeenTime) / (1000 * 60));
+                
+                // Use Google Maps to calculate ETA from last known bus position to user
+                const userLocation = await getCurrentLocation();
+                
+                const directionsService = new google.maps.DirectionsService();
+                const request = {
+                    origin: new google.maps.LatLng(busDoc.location.lat, busDoc.location.lng),
+                    destination: new google.maps.LatLng(userLocation.lat, userLocation.lng),
+                    travelMode: 'DRIVING'
+                };
+
+                directionsService.route(request, (result, status) => {
+                    if (status == 'OK') {
+                        const eta = result.routes[0].legs[0].duration.text;
+                         etaMessage.textContent = `Previsão de chegada: ${eta}. (Ônibus passou por um ponto há ${diffMinutes} min).`;
+                         etaInfo.classList.remove('hidden');
+                    } else {
+                        etaMessage.textContent = `Um ônibus desta linha passou por um ponto próximo há ${diffMinutes} minuto(s).`;
+                        etaInfo.classList.remove('hidden');
+                    }
+                });
+            } else {
+                 etaMessage.textContent = 'Aguardando informações de outros usuários para estimar a chegada.';
+                 etaInfo.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error("Error checking ETA:", error);
+            etaInfo.classList.add('hidden');
+        }
+    }
+
+
+    async function startTrip() {
+        clearInterval(appState.waitingInterval);
         
-        handleChangeSupervisorPassword() {
-            const currentPass = document.getElementById('current-password').value;
-            const newPass = document.getElementById('new-password').value;
-            const confirmPass = document.getElementById('confirm-new-password').value;
-            const errorEl = document.getElementById('password-change-error');
-            const successEl = document.getElementById('password-change-success');
-
-            errorEl.classList.add('hidden');
-            successEl.classList.add('hidden');
-
-            if (currentPass !== this.db.supervisorCreds.pass) {
-                errorEl.textContent = "A senha atual está incorreta.";
-                errorEl.classList.remove('hidden');
-                return;
-            }
-            if (newPass.length < 6) {
-                 errorEl.textContent = "A nova senha deve ter pelo menos 6 caracteres.";
-                errorEl.classList.remove('hidden');
-                return;
-            }
-            if (newPass !== confirmPass) {
-                errorEl.textContent = "As novas senhas não coincidem.";
-                errorEl.classList.remove('hidden');
-                return;
-            }
-
-            // Success
-            this.db.supervisorCreds.pass = newPass;
-            this.db.save('supervisorCreds', this.db.supervisorCreds);
-            successEl.classList.remove('hidden');
-            document.getElementById('supervisor-password-form').reset();
-        },
-
-        // SUPERVISOR FUNCTIONALITY
-        charts: {},
-        renderSupervisorDashboard() {
-            // DUMMY DATA FOR CHARTS - replace with real data processing
-            const labels = this.db.busLines.slice(0, 5).map(l => l.name.split(' ')[0]);
-            
-            // Define a color palette for the charts
-            const colorPalette = [
-                'rgba(47, 140, 86, 0.7)', // IFBA Green Light
-                'rgba(242, 163, 15, 0.7)', // IFBA Accent Gold
-                'rgba(28, 82, 64, 0.7)',   // IFBA Green Dark
-                'rgba(54, 162, 235, 0.7)', // Blue
-                'rgba(255, 99, 132, 0.7)', // Red
-                'rgba(153, 102, 255, 0.7)',// Purple
-            ];
-             const borderPalette = colorPalette.map(color => color.replace('0.7', '1'));
-
-            // --- Delay Chart Data & Logic ---
-            const delayValues = labels.map(() => Math.random() * 6); // Simulate delays from 0 to 6 mins
-            const delayStatusColors = delayValues.map(value => {
-                if (value < 1) return 'rgba(47, 140, 86, 0.7)';    // Green for Adiantado
-                if (value <= 3) return 'rgba(242, 163, 15, 0.7)'; // Gold for Pontual
-                return 'rgba(255, 99, 132, 0.7)';                 // Red for Atrasado
+        try {
+            const location = await getCurrentLocation();
+            appState.currentTrip.events.push({
+                type: 'start_trip',
+                timestamp: new Date().toISOString(),
+                location: { lat: location.lat, lng: location.lng }
             });
-            const delayStatusBorders = delayStatusColors.map(color => color.replace('0.7', '1'));
+            appState.currentTrip.status = 'in_progress';
+            
+            // Update realtime_bus location in Firestore
+            await window.firebase.setDoc(window.firebase.doc(appState.db, "realtime_bus", appState.currentTrip.lineId.toString()), {
+                lineId: appState.currentTrip.lineId,
+                location: { lat: location.lat, lng: location.lng },
+                timestamp: new Date().toISOString()
+            });
 
-            const delayData = {
-                labels,
+            document.getElementById('trip-bus-line').textContent = appState.currentTrip.lineName;
+            showScreen('journey-in-progress');
+
+            initializeMap(location);
+
+            let seconds = 0;
+            const timerEl = document.getElementById('trip-timer');
+            appState.tripInterval = setInterval(() => {
+                seconds++;
+                const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+                const secs = (seconds % 60).toString().padStart(2, '0');
+                timerEl.textContent = `${mins}:${secs}`;
+            }, 1000);
+
+        } catch(error) {
+            alert('Erro ao iniciar a viagem: ' + error.message);
+            // Revert to waiting screen or start screen
+            showScreen('journey-start');
+        }
+    }
+    
+    function initializeMap(startLocation) {
+        if (appState.map) {
+             appState.map.remove();
+        }
+
+        const mapElement = document.getElementById('map');
+        appState.map = L.map(mapElement).setView([startLocation.lat, startLocation.lng], 15);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(appState.map);
+
+        // User and IFBA markers
+        const userIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/3448/3448653.png', iconSize: [38, 38] });
+        appState.busMarker = L.marker([startLocation.lat, startLocation.lng], { icon: userIcon }).addTo(appState.map).bindPopup("Você está aqui!");
+
+        const ifbaIcon = L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/9906/9906517.png', iconSize: [38, 38] });
+        L.marker([IFBA_CAMPUS_COORDS.lat, IFBA_CAMPUS_COORDS.lng], { icon: ifbaIcon }).addTo(appState.map).bindPopup("IFBA Campus Juazeiro");
+
+        // Use Google Maps Directions API to get route
+        const directionsService = new google.maps.DirectionsService();
+        const request = {
+            origin: new google.maps.LatLng(startLocation.lat, startLocation.lng),
+            destination: new google.maps.LatLng(IFBA_CAMPUS_COORDS.lat, IFBA_CAMPUS_COORDS.lng),
+            travelMode: 'DRIVING'
+        };
+
+        directionsService.route(request, (result, status) => {
+            if (status == 'OK') {
+                const route = result.routes[0];
+                const eta = route.legs[0].duration.text;
+                // Add ETA info to UI if needed
+
+                // Decode polyline and draw on Leaflet map
+                const latlngs = google.maps.geometry.encoding.decodePath(route.overview_polyline).map(p => [p.lat(), p.lng()]);
+                
+                if (appState.routePolyline) {
+                    appState.map.removeLayer(appState.routePolyline);
+                }
+                appState.routePolyline = L.polyline(latlngs, { color: 'blue' }).addTo(appState.map);
+                appState.map.fitBounds(appState.routePolyline.getBounds());
+            } else {
+                console.error('Directions request failed due to ' + status);
+            }
+        });
+        
+         // Dynamically update route - This is a simulation. A real app would get live bus data.
+        let routeUpdateInterval = setInterval(() => {
+            navigator.geolocation.getCurrentPosition(position => {
+                 const newLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
+                 if (appState.busMarker) {
+                     appState.busMarker.setLatLng(newLocation);
+                     appState.map.panTo(newLocation);
+                 }
+                 // Recalculate route/ETA
+            });
+        }, 10000); // Update every 10 seconds
+    }
+
+
+    function endTrip() {
+        clearInterval(appState.tripInterval);
+        appState.currentTrip.events.push({
+            type: 'end_trip',
+            timestamp: new Date().toISOString(),
+            location: null // Location is optional on arrival
+        });
+        appState.currentTrip.status = 'ended';
+        showScreen('connection-popup');
+    }
+
+    function handleConnection(willConnect) {
+        if (willConnect) {
+            // Save current leg of the trip and start a new one
+            saveTripToHistory();
+            resetJourney(true); // isConnection = true
+        } else {
+            // End of journey, proceed to rating
+            showScreen('rating-screen');
+        }
+    }
+    
+    function resetJourney(isConnection = false) {
+        appState.currentTrip = null;
+        if (appState.map) {
+            appState.map.remove();
+            appState.map = null;
+        }
+        clearInterval(appState.waitingInterval);
+        clearInterval(appState.tripInterval);
+        
+        document.getElementById('bus-line-select').value = '';
+        document.getElementById('bus-line-manual').value = '';
+
+        if (isConnection) {
+            startWaitingFromConnection();
+        } else {
+            showScreen('main-user-interface');
+        }
+    }
+
+    async function startWaitingFromConnection() {
+        // A simplified version of startWaiting, just showing the UI
+        try {
+            const location = await getCurrentLocation(); // Get location for the new waiting point
+            
+             // Create a new trip object for the connection
+            const previousTrip = appState.currentTrip;
+            appState.currentTrip = {
+                id: `trip_${Date.now()}`,
+                userId: appState.userId,
+                lineId: null, // To be selected
+                lineName: null,
+                lineCost: null,
+                events: [{
+                    type: 'start_wait',
+                    timestamp: new Date().toISOString(),
+                    location: { lat: location.lat, lng: location.lng }
+                }],
+                status: 'waiting',
+                connectionFrom: previousTrip ? previousTrip.id : null
+            };
+
+            showScreen('journey-start'); // Go back to line selection for the connection
+        } catch (error) {
+            alert('Não foi possível obter a localização para a conexão. Tente novamente.');
+            showScreen('main-user-interface');
+        }
+    }
+
+    // --- Rating ---
+    function submitRating() {
+        const ratings = { bus: {}, stop: {} };
+        let allRated = true;
+
+        ratingCriteria.bus.forEach(item => {
+            const checked = document.querySelector(`input[name="${item.id}"]:checked`);
+            if (checked) ratings.bus[item.id] = parseInt(checked.value);
+            else allRated = false;
+        });
+        
+        ratingCriteria.stop.forEach(item => {
+            const checked = document.querySelector(`input[name="${item.id}"]:checked`);
+            if (checked) ratings.stop[item.id] = parseInt(checked.value);
+            else allRated = false;
+        });
+        
+        const errorEl = document.getElementById('rating-error');
+        if (!allRated) {
+            errorEl.textContent = 'Por favor, avalie todos os critérios.';
+            errorEl.classList.remove('hidden');
+            return;
+        }
+        errorEl.classList.add('hidden');
+        
+        appState.currentTrip.ratings = ratings;
+        appState.currentTrip.comments = {
+            bus: document.getElementById('bus-rating-comments').value,
+            stop: document.getElementById('stop-rating-comments').value
+        };
+
+        saveTripToHistory();
+        showSummary();
+    }
+
+    // --- Summary ---
+    function showSummary() {
+        const startWait = new Date(appState.currentTrip.events.find(e => e.type === 'start_wait').timestamp);
+        const startTrip = new Date(appState.currentTrip.events.find(e => e.type === 'start_trip').timestamp);
+        const endTrip = new Date(appState.currentTrip.events.find(e => e.type === 'end_trip').timestamp);
+
+        const waitSeconds = Math.floor((startTrip - startWait) / 1000);
+        const tripSeconds = Math.floor((endTrip - startTrip) / 1000);
+        const totalSeconds = waitSeconds + tripSeconds;
+        
+        const formatTime = (s) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+        
+        document.getElementById('summary-wait-time').textContent = formatTime(waitSeconds);
+        document.getElementById('summary-trip-time').textContent = formatTime(tripSeconds);
+        document.getElementById('summary-total-time').textContent = formatTime(totalSeconds);
+        document.getElementById('summary-distance').textContent = '5.2 km'; // Placeholder
+        document.getElementById('summary-cost').textContent = `R$ ${appState.currentTrip.lineCost.toFixed(2)}`;
+
+        showScreen('summary-screen');
+        
+        let countdown = 30;
+        const countdownEl = document.getElementById('summary-countdown');
+        appState.summaryTimeout = setInterval(() => {
+            countdown--;
+            countdownEl.textContent = countdown;
+            if (countdown <= 0) {
+                clearInterval(appState.summaryTimeout);
+                resetJourney();
+            }
+        }, 1000);
+    }
+
+    // --- History ---
+    async function saveTripToHistory() {
+        try {
+            await window.firebase.addDoc(window.firebase.collection(appState.db, "users", appState.userId, "history"), appState.currentTrip);
+            console.log("Trip saved to history.");
+            loadUserHistory();
+        } catch (error) {
+            console.error("Error saving trip:", error);
+        }
+    }
+    
+    async function loadUserHistory() {
+        if (!appState.userId) return;
+
+        const historyList = document.getElementById('history-list');
+        const noHistoryMsg = document.getElementById('no-history-message');
+        
+        const q = window.firebase.query(window.firebase.collection(appState.db, "users", appState.userId, "history"));
+
+        window.firebase.onSnapshot(q, (querySnapshot) => {
+             historyList.innerHTML = '';
+             if (querySnapshot.empty) {
+                 noHistoryMsg.classList.remove('hidden');
+             } else {
+                 noHistoryMsg.classList.add('hidden');
+                 querySnapshot.forEach((doc) => {
+                     const trip = doc.data();
+                     const tripDate = new Date(trip.events[0].timestamp).toLocaleDateString('pt-BR');
+                     const el = document.createElement('div');
+                     el.className = 'bg-gray-100 p-3 rounded-md';
+                     el.innerHTML = `<p class="font-semibold">${trip.lineName}</p>
+                                    <p class="text-sm text-gray-600">Data: ${tripDate}</p>`;
+                     historyList.appendChild(el);
+                 });
+             }
+        });
+    }
+
+    // --- Supervisor Section ---
+    let charts = {};
+    function initializeDashboard() {
+        const dummyData = generateDummyData();
+        createDelayChart(dummyData.delays);
+        createCausesChart(dummyData.causes);
+        createOccupancyChart(dummyData.occupancy);
+        createBusRatingChart(dummyData.busRatings);
+        createStopItemsChart(dummyData.stopRatings);
+        createCostChart(dummyData.costs);
+    }
+    
+     function generateDummyData() {
+        const lines = busLines.slice(0, 10).map(l => l.prefix); // Use first 10 lines for demo
+        return {
+            delays: lines.map(line => ({ line, delay: (Math.random() * 10 - 2) })), // Delays from -2 to 8 mins
+            causes: { 'Congestionamento': 40, 'Tempo de embarque': 25, 'Semáforos': 15, 'Manutenção': 10, 'Outros': 10 },
+            occupancy: { '06-08h': 85, '09-11h': 60, '12-14h': 75, '15-17h': 50, '18-20h': 90, '21-23h': 40 },
+            busRatings: { 'Limpeza': 4.5, 'Tratamento': 5.1, 'Velocidade': 3.8, 'Lotação': 2.5 },
+            stopRatings: { 'Rampa': 3.2, 'Cobertura': 4.1, 'Iluminação': 2.8, 'Piso': 4.5, 'Sinalização': 3.9, 'Segurança': 2.5 },
+            costs: lines.map(line => ({line, cost: 2.50 + (Math.random() - 0.5) })) // Small variation
+        };
+    }
+
+    function createOrUpdateChart(chartId, config) {
+        const ctx = document.getElementById(chartId).getContext('2d');
+        if (charts[chartId]) {
+            charts[chartId].destroy();
+        }
+        charts[chartId] = new Chart(ctx, config);
+    }
+
+    function createDelayChart(data) {
+         const getBarColor = (delay) => {
+            if (delay < 1) return 'rgba(75, 192, 192, 0.6)';   // Verde (Adiantado)
+            if (delay <= 3) return 'rgba(255, 206, 86, 0.6)';  // Amarelo (Pontual)
+            return 'rgba(255, 99, 132, 0.6)';      // Vermelho (Atrasado)
+        };
+        const config = {
+            type: 'bar',
+            data: {
+                labels: data.map(d => d.line),
                 datasets: [{
                     label: 'Atraso Médio (min)',
-                    data: delayValues,
-                    backgroundColor: delayStatusColors,
-                    borderColor: delayStatusBorders,
+                    data: data.map(d => d.delay.toFixed(2)),
+                    backgroundColor: data.map(d => getBarColor(d.delay)),
+                    borderColor: data.map(d => getBarColor(d.delay).replace('0.6', '1')),
                     borderWidth: 1
                 }]
-            };
-            const delayChartOptions = {
-                scales: { 
-                    y: { 
+            },
+            options: {
+                scales: {
+                    y: {
                         beginAtZero: true,
                         ticks: {
-                            // Format y-axis labels to two decimal places with a comma
-                            callback: function(value) {
-                                return value.toFixed(2).replace('.', ',');
+                            callback: function(value, index, values) {
+                                return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' min';
                             }
                         }
-                    } 
+                    }
                 },
                 plugins: {
+                    legend: { display: false },
                     tooltip: {
-                        callbacks: {
+                         callbacks: {
                             label: function(context) {
                                 let label = context.dataset.label || '';
                                 if (label) {
                                     label += ': ';
                                 }
-                                const value = context.parsed.y;
-                                if (value !== null) {
-                                    label += `${value.toFixed(2).replace('.', ',')} min`;
-                                    let status = '';
-                                    if (value < 1) status = ' (Adiantado)';
-                                    else if (value <= 3) status = ' (Pontual)';
-                                    else status = ' (Atrasado)';
-                                    label += status;
+                                if (context.parsed.y !== null) {
+                                    label += context.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' min';
                                 }
                                 return label;
                             }
                         }
                     }
                 }
-            };
-
-            // --- Bus Stop Rating Chart ---
-            const stopRatingLabels = [
-                'Rampa de Acesso', 'Cobertura', 'Iluminação', 
-                'Piso Acessível', 'Sinalização', 'Segurança'
-            ];
-            const stopRatingData = {
-                labels: stopRatingLabels,
+            }
+        };
+        createOrUpdateChart('delay-chart', config);
+    }
+    
+    function createCausesChart(data) {
+        const config = {
+            type: 'pie',
+            data: {
+                labels: Object.keys(data),
                 datasets: [{
-                    label: 'Avaliação Média (1-6)',
-                    data: stopRatingLabels.map(() => (Math.random() * 5 + 1)),
-                    backgroundColor: colorPalette,
+                    data: Object.values(data),
+                     backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'],
                 }]
-            };
-            const stopRatingOptions = {
-                indexAxis: 'y', // Makes the bar chart horizontal
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        max: 6,
-                        ticks: { stepSize: 1 }
-                    }
-                },
+            },
+            options: {
                 plugins: {
-                    legend: { display: false },
-                    datalabels: {
-                        anchor: 'end',
-                        align: 'end',
-                        formatter: (value) => value.toFixed(1),
-                        color: '#1C5240',
-                        font: { weight: 'bold' }
-                    }
-                }
-            };
-            
-            // --- Other Charts Data ---
-            const capacityData = {
-                 labels: ['06-08h', '09-11h', '12-14h', '15-17h', '18-20h', '21-23h'],
-                datasets: [{
-                    label: 'Lotação Percebida (%)',
-                    data: [95, 60, 75, 55, 90, 40],
-                    backgroundColor: 'rgba(28, 82, 64, 0.7)',
-                    fill: true,
-                }]
-            };
-            const costData = {
-                labels,
-                datasets: [{
-                    label: 'Custo Médio (R$)',
-                    data: labels.map(() => (Math.random() * 1 + 2.5).toFixed(2)),
-                    backgroundColor: 'rgba(47, 140, 86, 0.7)',
-                    borderColor: 'rgba(47, 140, 86, 1)',
-                    borderWidth: 1,
-                }]
-            };
-
-            // --- Delay Causes Chart Data ---
-            const delayCausesData = {
-                labels: [
-                    'Congestionamento', 'Tempo de Embarque', 'Semáforos',
-                    'Redutores de Velocidade', 'Intervalos Longos', 'Manutenção/Quebra'
-                ],
-                datasets: [{
-                    label: '% de Contribuição',
-                    data: [35, 20, 15, 10, 10, 10], // Dummy percentages
-                    backgroundColor: colorPalette,
-                    borderColor: borderPalette,
-                    borderWidth: 1
-                }]
-            };
-            const delayCausesOptions = {
-                plugins: {
-                    legend: { position: 'top' },
-                    datalabels: {
+                    tooltip: {
+                         callbacks: {
+                            label: function(context) {
+                                let label = context.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed !== null) {
+                                    label += context.parsed + '%';
+                                }
+                                return label;
+                            }
+                        }
+                    },
+                     datalabels: {
                         formatter: (value, ctx) => {
-                            const total = ctx.chart.data.datasets[0].data.reduce((acc, data) => acc + data, 0);
-                            const percentage = (value / total * 100).toFixed(1) + '%';
+                            let sum = 0;
+                            let dataArr = ctx.chart.data.datasets[0].data;
+                            dataArr.map(data => {
+                                sum += data;
+                            });
+                            let percentage = (value*100 / sum).toFixed(2)+"%";
                             return percentage;
                         },
                         color: '#fff',
-                        font: { weight: 'bold' }
                     }
                 }
-            };
-
-
-            // --- Render all charts ---
-            this.renderChart('delay-chart', 'bar', delayData, delayChartOptions);
-            this.renderChart('stop-rating-chart', 'bar', stopRatingData, stopRatingOptions);
-            this.renderChart('capacity-chart', 'radar', capacityData, { elements: { line: { borderWidth: 3 } } });
-            this.renderChart('cost-chart', 'bar', costData, { scales: { y: { beginAtZero: true, ticks: { callback: (value) => `R$ ${value}` } } } });
-            this.renderChart('delay-causes-chart', 'pie', delayCausesData, delayCausesOptions);
-
-            // Efficiency Ranking
-            const efficiencyRanking = document.getElementById('efficiency-ranking');
-            efficiencyRanking.innerHTML = this.db.busLines.slice(5,9).sort((a,b) => Math.random() - 0.5)
-                .map((line, i) => `<div class="flex justify-between p-2 ${i % 2 === 0 ? 'bg-gray-100' : ''} rounded"><span>${i+1}. ${line.name.split(' ')[0]}</span> <span class="font-bold text-ifba-green-light">${(Math.random() * 10 + 88).toFixed(1)}%</span></div>`)
-                .join('');
-        },
-
-        renderChart(canvasId, type, data, options = {}) {
-            const ctx = document.getElementById(canvasId).getContext('2d');
-            if (this.charts[canvasId]) {
-                this.charts[canvasId].destroy();
             }
+        };
+        createOrUpdateChart('causes-chart', config);
+    }
 
-            // Plugin to force a white background, ensuring proper PDF export
-            const customCanvasBackgroundColor = {
-                id: 'customCanvasBackgroundColor',
-                beforeDraw: (chart) => {
-                    const { ctx } = chart;
-                    ctx.save();
-                    ctx.globalCompositeOperation = 'destination-over';
-                    ctx.fillStyle = '#FFFFFF';
-                    ctx.fillRect(0, 0, chart.width, chart.height);
-                    ctx.restore();
+    function createOccupancyChart(data) {
+        const config = {
+            type: 'line',
+            data: {
+                labels: Object.keys(data),
+                datasets: [{
+                    label: 'Lotação Média (%)',
+                    data: Object.values(data),
+                    borderColor: '#2F8C56',
+                    backgroundColor: 'rgba(47, 140, 86, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            }
+        };
+        createOrUpdateChart('occupancy-chart', config);
+    }
+
+    function createBusRatingChart(data) {
+        const config = {
+            type: 'radar',
+            data: {
+                labels: Object.keys(data),
+                datasets: [{
+                    label: 'Avaliação Média (1-6)',
+                    data: Object.values(data),
+                    backgroundColor: 'rgba(242, 163, 15, 0.2)',
+                    borderColor: '#F2A30F',
+                    pointBackgroundColor: '#F2A30F',
+                }]
+            },
+            options: {
+                 scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 6
+                    }
                 }
-            };
-
-            this.charts[canvasId] = new Chart(ctx, { 
-                type, 
-                data, 
-                options,
-                // When providing a plugins array, we need to explicitly include the datalabels plugin
-                // which is available globally as ChartDataLabels when loaded via script tag.
-                plugins: [ChartDataLabels, customCanvasBackgroundColor]
-            });
-        },
-
-        generatePDFReport() {
-            const { jsPDF } = window.jspdf;
-            // Alterado para orientação paisagem ('l')
-            const doc = new jsPDF({ orientation: 'l', unit: 'mm', format: 'a4' });
-            
-            const addHeader = (docInstance, title) => {
-                docInstance.setFontSize(18);
-                docInstance.setTextColor('#1C5240');
-                docInstance.text("Relatório de Desempenho - Mobilis", 14, 22);
-                docInstance.setFontSize(11);
-                docInstance.setTextColor(100);
-                docInstance.text(`Período: ${document.getElementById('supervisor-period-filter').selectedOptions[0].text}`, 14, 30);
-                
-                docInstance.setFontSize(14);
-                docInstance.setTextColor('#1C5240');
-                if (title) {
-                    docInstance.text(title, 14, 45);
+            }
+        };
+         createOrUpdateChart('bus-rating-chart', config);
+    }
+    
+    function createStopItemsChart(data) {
+        const config = {
+            type: 'bar',
+            data: {
+                labels: Object.keys(data),
+                datasets: [{
+                    label: 'Avaliação Média (1-6)',
+                    data: Object.values(data),
+                    backgroundColor: '#36A2EB',
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Horizontal bars
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 6
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
                 }
-            };
-
-            // --- Página 1: Atrasos Médios ---
-            addHeader(doc, "Atrasos Médios por Linha (minutos)");
-            const delayChartImg = this.charts['delay-chart'].toBase64Image();
-            // Dimensões ajustadas para paisagem (A4: 297x210mm)
-            doc.addImage(delayChartImg, 'PNG', 14, 55, 269, 135);
-
-            // --- Página 2: Causas dos Atrasos ---
-            doc.addPage();
-            addHeader(doc, "Causas Prováveis dos Atrasos");
-            const causesChartImg = this.charts['delay-causes-chart'].toBase64Image();
-            const pieChartX = (297 - 150) / 2; // Centralizar o gráfico de pizza
-            doc.addImage(causesChartImg, 'PNG', pieChartX, 55, 150, 150);
-            
-            // --- Página 3: Outros Dashboards (Par 1) ---
-            doc.addPage();
-            addHeader(doc, "Indicadores de Desempenho (1/2)");
-            let currentX = 14;
-            let currentY = 55;
-            const chartWidth = 125;
-            const chartHeight = 90;
-            const xMargin = 18;
-
-            // Avaliação dos Pontos
-            const stopRatingChartImg = this.charts['stop-rating-chart'].toBase64Image();
-            doc.text("Avaliação dos Pontos", currentX, currentY - 5);
-            doc.addImage(stopRatingChartImg, 'PNG', currentX, currentY, chartWidth, chartHeight);
-
-            // Lotação Média
-            currentX += chartWidth + xMargin;
-            const capacityChartImg = this.charts['capacity-chart'].toBase64Image();
-            doc.text("Lotação Média por Horário", currentX, currentY - 5);
-            doc.addImage(capacityChartImg, 'PNG', currentX, currentY, chartWidth, chartHeight);
-            
-            // --- Página 4: Outros Dashboards (Par 2) ---
-            doc.addPage();
-            addHeader(doc, "Indicadores de Desempenho (2/2)");
-            currentX = 14; // Reset X
-            currentY = 55; // Reset Y
-            
-            // Custo Médio
-            const costChartImg = this.charts['cost-chart'].toBase64Image();
-            doc.text("Custo Médio por Viagem (R$)", currentX, currentY - 5);
-            doc.addImage(costChartImg, 'PNG', currentX, currentY, chartWidth, chartHeight);
-
-            // Ranking de Eficiência
-            currentX += chartWidth + xMargin;
-            doc.text("Ranking de Eficiência", currentX, currentY - 5);
-            const efficiencyRankingEl = document.getElementById('efficiency-ranking');
-            const rankingRows = Array.from(efficiencyRankingEl.querySelectorAll('div')).map(div => {
-                const spans = div.querySelectorAll('span');
-                return [spans[0].innerText, spans[1].innerText];
-            });
-
-            doc.autoTable({
-                startY: currentY,
-                head: [['Posição & Linha', 'Eficiência']],
-                body: rankingRows,
-                theme: 'striped',
-                headStyles: { fillColor: [28, 82, 64] },
-                margin: { left: currentX },
-                tableWidth: chartWidth,
-            });
-
-
-            doc.save(`relatorio_mobilis_${new Date().toISOString().slice(0,10)}.pdf`);
-        },
-        
-        renderLinesList() {
-            const container = document.getElementById('lines-list');
-            container.innerHTML = '';
-            this.db.busLines.forEach(line => {
-                const item = document.createElement('div');
-                item.className = 'p-3 border rounded-lg flex justify-between items-center bg-white';
-                item.innerHTML = `
-                    <span>${line.name}</span>
-                    <button onclick="app.removeLine(${line.id})" class="text-red-500 hover:text-red-700">
-                        <i data-lucide="trash-2" class="w-5 h-5"></i>
-                    </button>
-                `;
-                container.appendChild(item);
-            });
-            lucide.createIcons();
-        },
-
-        addNewLine() {
-            const prefix = document.getElementById('new-line-prefix').value;
-            const cost = parseFloat(document.getElementById('new-line-cost').value);
-
-            if (!prefix || isNaN(cost)) {
-                alert("Prefixo da linha e custo são obrigatórios.");
-                return;
             }
-            const newLine = {
-                id: Date.now(),
-                name: prefix,
-                cost: cost,
-                // other fields are ignored for simplicity
-            };
-            this.db.busLines.push(newLine);
-            this.db.save('busLines', this.db.busLines);
-            this.renderLinesList();
-            this.populateBusLines(); // update select dropdowns
-            
-            // Clear fields
-            document.getElementById('new-line-prefix').value = '';
-            document.getElementById('new-line-cost').value = '';
-            document.getElementById('new-line-route').value = '';
-            document.getElementById('new-line-schedule').value = '';
-        },
-        
-        removeLine(id) {
-            if(confirm('Tem certeza que deseja remover esta linha?')) {
-                this.db.busLines = this.db.busLines.filter(line => line.id !== id);
-                this.db.save('busLines', this.db.busLines);
-                this.renderLinesList();
-                this.populateBusLines();
-            }
-        },
-
-        importLines() {
-            const fileInput = document.getElementById('import-file');
-            const file = fileInput.files[0];
-            if (!file) {
-                alert("Por favor, selecione um arquivo.");
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const text = event.target.result;
-                const lines = text.split('\n').filter(Boolean);
-                try {
-                    lines.forEach(line => {
-                        const [name, costStr] = line.split(',');
-                        if (name && !isNaN(parseFloat(costStr))) {
-                            this.db.busLines.push({ id: Date.now(), name: name.trim(), cost: parseFloat(costStr) });
+        };
+        createOrUpdateChart('stop-items-chart', config);
+    }
+    
+    function createCostChart(data) {
+         const config = {
+            type: 'bar',
+            data: {
+                labels: data.map(d => d.line),
+                datasets: [{
+                    label: 'Custo Médio (R$)',
+                    data: data.map(d => d.cost),
+                    backgroundColor: 'rgba(153, 102, 255, 0.6)',
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        ticks: {
+                            callback: function(value) {
+                                return 'R$ ' + value.toFixed(2);
+                            }
                         }
-                    });
-                    this.db.save('busLines', this.db.busLines);
-                    this.renderLinesList();
-                    this.populateBusLines();
-                    alert(`${lines.length} linhas importadas com sucesso!`);
-                } catch (e) {
-                    alert("Erro ao processar o arquivo. Certifique-se que está no formato: Nome da Linha,Custo");
+                    }
+                },
+                 plugins: {
+                    legend: { display: false }
                 }
-            };
-            reader.readAsText(file);
-        },
-
-        previewLogo(event) {
-            const input = event.target;
-            const previewId = input.id.includes('left') ? 'logo-left-preview' : 'logo-right-preview';
-            const preview = document.getElementById(previewId);
-            const file = input.files[0];
-            
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    preview.src = e.target.result;
-                }
-                reader.readAsDataURL(file);
             }
-        },
+        };
+        createOrUpdateChart('cost-chart', config);
+    }
 
-        saveLogos() {
-            const leftPreview = document.getElementById('logo-left-preview').src;
-            const rightPreview = document.getElementById('logo-right-preview').src;
-            
-            this.db.save('logoLeft', leftPreview);
-            this.db.save('logoRight', rightPreview);
-            
-            this.loadLogos();
-            alert("Logos salvos com sucesso!");
-        },
+    function generatePDFReport() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+            orientation: 'landscape',
+            unit: 'px',
+            format: 'a4'
+        });
 
-        loadLogos() {
-            const logoLeft = this.db.load('logoLeft');
-            const logoRight = this.db.load('logoRight');
+        doc.setFontSize(20);
+        doc.text("Relatório de Desempenho - Mobilis", 40, 30);
+        doc.setFontSize(12);
+        doc.text(`Período: ${document.getElementById('report-period').options[document.getElementById('report-period).selectedIndex].text}`, 40, 45);
+        doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 40, 60);
+
+        const addChartToPDF = (chartId, title, doc) => {
+            const canvas = document.getElementById(chartId);
+             // Ensure chart has a white background for PDF
+            const canvasImage = canvas.toDataURL('image/png', 1.0);
+            const chartWidth = doc.internal.pageSize.getWidth() - 80;
+            const chartHeight = (canvas.height * chartWidth) / canvas.width;
+
+            doc.addPage('a4', 'l');
+            doc.setFontSize(16);
+            doc.text(title, 40, 30);
+            doc.addImage(canvasImage, 'PNG', 40, 50, chartWidth, chartHeight);
+        };
+        
+        const addChartPairToPDF = (chartId1, title1, chartId2, title2, doc) => {
+            const canvas1 = document.getElementById(chartId1);
+            const canvas2 = document.getElementById(chartId2);
+            const canvasImage1 = canvas1.toDataURL('image/png', 1.0);
+            const canvasImage2 = canvas2.toDataURL('image/png', 1.0);
+
+            const chartWidth = (doc.internal.pageSize.getWidth() / 2) - 60;
+            const chartHeight1 = (canvas1.height * chartWidth) / canvas1.width;
+            const chartHeight2 = (canvas2.height * chartWidth) / canvas2.width;
             
-            if (logoLeft) {
-                document.getElementById('logo-left').src = logoLeft;
-                document.getElementById('logo-left-preview').src = logoLeft;
-            }
-            if (logoRight) {
-                document.getElementById('logo-right').src = logoRight;
-                document.getElementById('logo-right-preview').src = logoRight;
-            }
+            doc.addPage('a4', 'l');
+            doc.setFontSize(14);
+            doc.text(title1, 40, 30);
+            doc.addImage(canvasImage1, 'PNG', 40, 40, chartWidth, chartHeight1);
+
+            const xPos2 = doc.internal.pageSize.getWidth() / 2 + 20;
+            doc.text(title2, xPos2, 30);
+            doc.addImage(canvasImage2, 'PNG', xPos2, 40, chartWidth, chartHeight2);
+        };
+
+        // Add charts to PDF
+        addChartToPDF('delay-chart', 'Atrasos Médios por Linha (minutos)', doc);
+        addChartToPDF('causes-chart', 'Causas Prováveis dos Atrasos', doc);
+        addChartPairToPDF('occupancy-chart', 'Lotação Média por Horário', 'bus-rating-chart', 'Avaliação Média dos Ônibus', doc);
+        addChartPairToPDF('stop-items-chart', 'Avaliação dos Pontos de Ônibus', 'cost-chart', 'Custo Médio por Viagem', doc);
+
+
+        // Remove the initial blank page
+        doc.deletePage(1);
+
+        doc.save(`relatorio_mobilis_${new Date().toISOString().split('T')[0]}.pdf`);
+    }
+    
+    function switchToUserView() {
+        if (appState.currentUser && appState.currentUser.profile === 'supervisor') {
+             // Simulate a student login to show the user view
+            appState.currentUser = { name: 'Supervisor (Visão Estudante)', course: 'N/A', profile: 'student' };
+            setupUserInterface(appState.currentUser.name);
         }
+    }
+    
+    function changeSupervisorPassword() {
+        const currentPass = document.getElementById('currentSupervisorPassword').value;
+        const newPass = document.getElementById('newSupervisorPassword').value;
+        const confirmPass = document.getElementById('confirmNewSupervisorPassword').value;
+        const errorEl = document.getElementById('password-change-error');
+        const successEl = document.getElementById('password-change-success');
+        
+        errorEl.classList.add('hidden');
+        successEl.classList.add('hidden');
+
+        // This is a mock validation. In a real app, this would be a secure server call.
+        if (currentPass !== '@#Log!20252') {
+            errorEl.textContent = 'Senha atual incorreta.';
+            errorEl.classList.remove('hidden');
+            return;
+        }
+        if (newPass.length < 8) {
+            errorEl.textContent = 'A nova senha deve ter pelo menos 8 caracteres.';
+            errorEl.classList.remove('hidden');
+            return;
+        }
+        if (newPass !== confirmPass) {
+            errorEl.textContent = 'As novas senhas não coincidem.';
+            errorEl.classList.remove('hidden');
+            return;
+        }
+
+        // Mock success
+        console.log("Password would be changed to:", newPass);
+        successEl.textContent = 'Senha alterada com sucesso!';
+        successEl.classList.remove('hidden');
+
+        // Clear fields
+        document.getElementById('currentSupervisorPassword').value = '';
+        document.getElementById('newSupervisorPassword').value = '';
+        document.getElementById('confirmNewSupervisorPassword').value = '';
+    }
+    
+    function setupLogoPreviews() {
+        const handleFileSelect = (inputId, previewId) => {
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+            input.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        preview.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        };
+        handleFileSelect('logoLeftFile', 'logoLeftPreview');
+        handleFileSelect('logoRightFile', 'logoRightPreview');
+    }
+    
+    function saveLogos() {
+        const logoLeftSrc = document.getElementById('logoLeftPreview').src;
+        const logoRightSrc = document.getElementById('logoRightPreview').src;
+
+        localStorage.setItem('supervisorLogoLeft', logoLeftSrc);
+        localStorage.setItem('supervisorLogoRight', logoRightSrc);
+
+        loadLogos();
+        alert('Logos salvos com sucesso!');
+        showScreen('supervisor-dashboard');
+    }
+
+    function loadLogos() {
+        const logoLeftSrc = localStorage.getItem('supervisorLogoLeft');
+        const logoRightSrc = localStorage.getItem('supervisorLogoRight');
+        const logoLeftEl = document.getElementById('supervisorLogoLeft');
+        const logoRightEl = document.getElementById('supervisorLogoRight');
+
+        if (logoLeftSrc) {
+            logoLeftEl.src = logoLeftSrc;
+            logoLeftEl.classList.remove('hidden');
+        }
+        if (logoRightSrc) {
+            logoRightEl.src = logoRightSrc;
+            logoRightEl.classList.remove('hidden');
+        }
+    }
+    
+    function confirmClearHistories() {
+        if (confirm("ATENÇÃO: Esta ação apagará permanentemente todos os históricos de viagens de todos os usuários. Deseja continuar?")) {
+            clearAllHistories();
+        }
+    }
+
+    async function clearAllHistories() {
+        alert("Iniciando limpeza de dados. Isso pode levar um momento.");
+        try {
+            // 1. Get all user documents
+            const usersSnapshot = await window.firebase.getDocs(window.firebase.collection(appState.db, "users"));
+            
+            // 2. For each user, delete their history subcollection
+            const batch = window.firebase.writeBatch(appState.db);
+            for (const userDoc of usersSnapshot.docs) {
+                const historySnapshot = await window.firebase.getDocs(window.firebase.collection(appState.db, "users", userDoc.id, "history"));
+                historySnapshot.forEach(historyDoc => {
+                    batch.delete(historyDoc.ref);
+                });
+            }
+            
+            // 3. Delete realtime_bus data
+            const realtimeSnapshot = await window.firebase.getDocs(window.firebase.collection(appState.db, "realtime_bus"));
+            realtimeSnapshot.forEach(doc => {
+                 batch.delete(doc.ref);
+            });
+
+            await batch.commit();
+
+            alert("Todos os históricos de viagem e dados em tempo real foram limpos com sucesso!");
+            initializeDashboard(); // Refresh dashboard with empty data
+        } catch (error) {
+            console.error("Erro ao limpar históricos:", error);
+            alert("Ocorreu um erro ao tentar limpar os dados. Verifique o console para mais detalhes.");
+        }
+    }
+
+    async function generateAISummary() {
+        const summaryBox = document.getElementById('ai-summary-box');
+        const summaryContent = document.getElementById('ai-summary-content');
+        summaryBox.classList.remove('hidden');
+        summaryContent.innerHTML = '<p class="animate-pulse">Analisando dados e gerando insights...</p>';
+        
+        // --- Gemini API Configuration ---
+        const API_KEY = ""; // Leave empty to use proxy
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${API_KEY}`;
+        
+        // 1. Collect data from dashboard
+        const dashboardData = generateDummyData(); // Using dummy data for this example
+        const dataPrompt = `
+            Aqui estão os dados de desempenho do transporte de estudantes:
+            - Atrasos médios por linha em minutos (valores negativos são adiantamentos): ${JSON.stringify(dashboardData.delays)}
+            - Principais causas de atrasos (em %): ${JSON.stringify(dashboardData.causes)}
+            - Lotação média dos ônibus por horário (em %): ${JSON.stringify(dashboardData.occupancy)}
+            - Avaliações médias dos pontos de ônibus (escala 1-6): ${JSON.stringify(dashboardData.stopRatings)}
+            - Avaliações médias dos ônibus (escala 1-6): ${JSON.stringify(dashboardData.busRatings)}
+        `;
+        
+        // 2. Create the prompt for Gemini
+        const systemPrompt = `Você é um analista de logística especialista em transporte público. Sua tarefa é analisar os dados fornecidos e gerar um resumo conciso e acionável em português do Brasil. O resumo deve ser formatado em HTML, usando listas e tags <strong> para destacar pontos importantes. Identifique os 2 principais problemas e sugira 2 ações corretivas claras e diretas.`;
+
+        const payload = {
+            contents: [{ parts: [{ text: dataPrompt }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+        };
+        
+        // 3. Make the API call
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`API Error: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            
+            if (text) {
+                summaryContent.innerHTML = text;
+            } else {
+                summaryContent.textContent = "Não foi possível gerar o resumo. A resposta da IA estava vazia.";
+            }
+
+        } catch (error) {
+            console.error("Error calling Gemini API:", error);
+            summaryContent.textContent = "Ocorreu um erro ao tentar gerar o resumo. Verifique o console para detalhes.";
+        }
+    }
+
+
+    // --- App Initialization ---
+    window.onload = () => {
+        initializeFirebase();
+        populateBusLines();
+        createRatingControls('bus-rating-criteria', ratingCriteria.bus);
+        createRatingControls('stop-rating-criteria', ratingCriteria.stop);
+        setupLogoPreviews();
+        lucide.createIcons();
     };
 
-    // Start the application
-    window.onload = () => app.init();
+</script>
 
-    </script>
 </body>
-
 </html>
-
-
-
-
-
-
 
 
 
