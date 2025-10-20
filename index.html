@@ -24,8 +24,8 @@
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, writeBatch, initializeFirestore, CACHE_SIZE_UNLIMITED } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, addDoc, onSnapshot, collection, query, where, getDocs, writeBatch, initializeFirestore, CACHE_SIZE_UNLIMITED } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         window.firebase = {
             initializeApp,
             getAuth,
@@ -33,15 +33,11 @@
             signInWithCustomToken,
             onAuthStateChanged,
             signOut,
-            createUserWithEmailAndPassword,
-            signInWithEmailAndPassword,
             getFirestore,
             doc,
             getDoc,
             setDoc,
             addDoc,
-            updateDoc,
-            deleteDoc,
             onSnapshot,
             collection,
             query,
@@ -74,6 +70,7 @@
 
         .bg-ifba-green-dark { background-color: var(--ifba-green-dark); }
         .text-ifba-green-dark { color: var(--ifba-green-dark); }
+        .text-ifba-red-error { color: var(--ifba-red-error); }
         .bg-ifba-green-light { background-color: var(--ifba-green-light); }
         .text-ifba-green-light { color: var(--ifba-green-light); }
         .bg-ifba-accent-gold { background-color: var(--ifba-accent-gold); }
@@ -225,7 +222,6 @@
                     <p class="mb-4 text-gray-600">Selecione a linha de autocarro para começar.</p>
                     <select id="bus-line-select" class="w-full p-3 mb-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-ifba-green-light outline-none bg-white">
                         <option value="" disabled selected>Selecione uma linha...</option>
-                        <!-- Options will be populated by JS -->
                     </select>
                     <input type="text" id="bus-line-manual" placeholder="Ou digite o nome/código da linha" class="w-full p-3 mb-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-ifba-green-light outline-none">
                     <p id="bus-line-error" class="text-red-500 text-sm mb-4 hidden"></p>
@@ -255,7 +251,6 @@
                      <h3 class="text-lg font-semibold mb-2 text-center">Viagem em andamento...</h3>
                      <p class="text-gray-600 text-center mb-4">Linha: <span id="trip-bus-line" class="font-bold"></span></p>
                     
-                     <!-- Map Area -->
                      <div id="map-container" class="w-full h-64 bg-gray-200 rounded-lg mb-4 border-2 border-ifba-green-dark">
                          <div id="map" class="h-full w-full"></div>
                      </div>
@@ -271,7 +266,6 @@
                 <div id="user-history" class="mt-8">
                     <h3 class="text-lg font-semibold mb-4 border-b-2 pb-2 border-ifba-green-light">Histórico de Viagens (Últimas 30)</h3>
                     <div id="history-list" class="space-y-3 max-h-96 overflow-y-auto pr-2">
-                        <!-- History items will be populated by JS -->
                         <p id="no-history-message" class="text-gray-500">Nenhuma viagem registada ainda.</p>
                     </div>
                 </div>
@@ -288,12 +282,20 @@
                     </div>
                 </div>
             </div>
+            
+             <!-- Generic Alert Popup -->
+            <div id="alert-popup" class="popup-overlay hidden">
+                <div class="bg-white p-8 rounded-lg shadow-2xl text-center w-full max-w-sm">
+                    <h3 id="alert-title" class="text-xl font-bold text-ifba-red-error mb-4">Atenção</h3>
+                    <p id="alert-message" class="text-gray-600 mb-6">Mensagem de erro.</p>
+                    <button onclick="closeAlert()" class="px-8 py-3 rounded-md text-white font-semibold btn-3d btn-green">OK</button>
+                </div>
+            </div>
 
             <!-- Rating Screen -->
             <div id="rating-screen" class="hidden bg-white p-8 rounded-lg shadow-lg">
                 <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Avalie a sua Viagem</h2>
                 
-                <!-- Bus Stop Rating -->
                 <div class="mb-8">
                     <h3 class="text-lg font-semibold mb-4 border-b pb-2">Paragem de Autocarro</h3>
                     <div class="space-y-4">
@@ -302,7 +304,6 @@
                     </div>
                 </div>
 
-                <!-- Bus Rating -->
                 <div>
                     <h3 class="text-lg font-semibold mb-4 border-b pb-2">Autocarro</h3>
                     <div class="space-y-4">
@@ -380,13 +381,10 @@
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Main Chart: Average Delays -->
                     <div class="lg:col-span-2 bg-white p-4 rounded-lg shadow">
                         <h3 class="font-semibold mb-2">Atrasos Médios por Linha (minutos)</h3>
                         <canvas id="delay-chart"></canvas>
                     </div>
-                    
-                    <!-- Other Metrics -->
                     <div class="bg-white p-4 rounded-lg shadow">
                         <h3 class="font-semibold mb-2">Causas Prováveis dos Atrasos</h3>
                         <canvas id="causes-chart"></canvas>
@@ -409,7 +407,6 @@
                     </div>
                 </div>
 
-                 <!-- User Mode Button -->
                 <div class="mt-8 text-center">
                     <button onclick="switchToUserView()" class="p-3 rounded-md text-white font-semibold btn-3d btn-gold">
                         <i data-lucide="user-round" class="inline-block mr-2"></i>Visualizar como Estudante
@@ -421,7 +418,6 @@
              <!-- Supervisor: Manage Lines Screen -->
             <div id="manage-lines-screen" class="hidden bg-white p-8 rounded-lg shadow-lg">
                 <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Gerir Linhas de Autocarro</h2>
-                
                 <div class="mb-6">
                     <h3 class="text-lg font-semibold mb-2">Adicionar Nova Linha</h3>
                     <input type="text" id="newLinePrefix" placeholder="Prefixo (Ex: 102)" class="w-full p-2 mb-2 border rounded-md">
@@ -437,9 +433,7 @@
                  </div>
 
                 <h3 class="text-lg font-semibold mb-2">Linhas Registadas</h3>
-                <div id="lines-list" class="space-y-2 max-h-60 overflow-y-auto">
-                    <!-- Lines list populated by JS -->
-                </div>
+                <div id="lines-list" class="space-y-2 max-h-60 overflow-y-auto"></div>
                 
                 <button onclick="showScreen('supervisor-dashboard')" class="mt-6 p-3 rounded-md text-ifba-green-dark font-semibold border-2 border-ifba-green-dark hover:bg-gray-100 w-full">Voltar ao Painel</button>
             </div>
@@ -529,7 +523,7 @@
         } catch (error) {
             console.error("Firebase initialization failed:", error);
             document.getElementById('loading-overlay').classList.add('hidden');
-            alert("Erro crítico: Não foi possível conectar aos serviços da aplicação.");
+            showAlert("Erro crítico: Não foi possível conectar aos serviços da aplicação.", "Erro de Conexão");
         }
     }
 
@@ -538,7 +532,6 @@
         appState.userId = 'offline_user_' + Date.now();
         console.log("Running in offline mode with temporary user ID:", appState.userId);
     }
-
 
     async function setupAuthListener() {
         const loadingOverlay = document.getElementById('loading-overlay');
@@ -580,7 +573,7 @@
              }
         } catch (error) {
             console.error("Automatic sign-in failed:", error);
-            alert("Não foi possível iniciar uma sessão segura. Tente recarregar a página.");
+            showAlert("Não foi possível iniciar uma sessão segura. Tente recarregar a página.", "Erro de Sessão");
             loadingOverlay.classList.add('hidden');
         }
     }
@@ -592,6 +585,28 @@
         });
         document.getElementById(screenId).classList.remove('hidden');
         appState.currentScreen = screenId;
+    }
+
+    function showJourneyStep(stepId) {
+        document.getElementById('journey-start').classList.add('hidden');
+        document.getElementById('journey-waiting').classList.add('hidden');
+        document.getElementById('journey-in-progress').classList.add('hidden');
+        
+        const stepElement = document.getElementById(stepId);
+        if (stepElement) {
+            stepElement.classList.remove('hidden');
+        }
+    }
+
+    // --- Popups ---
+    function showAlert(message, title = 'Atenção') {
+        document.getElementById('alert-title').textContent = title;
+        document.getElementById('alert-message').textContent = message;
+        document.getElementById('alert-popup').classList.remove('hidden');
+    }
+
+    function closeAlert() {
+        document.getElementById('alert-popup').classList.add('hidden');
     }
 
     // --- Initial Data ---
@@ -717,6 +732,7 @@
     function setupUserInterface(name) {
         document.getElementById('display-user-name').textContent = name;
         showScreen('main-user-interface');
+        showJourneyStep('journey-start');
         loadUserHistory();
     }
     
@@ -758,7 +774,7 @@
                         lat: position.coords.latitude,
                         lng: position.coords.longitude
                     }),
-                    () => reject(new Error('Não foi possível obter a sua localização.'))
+                    () => reject(new Error('Não foi possível obter a sua localização. Por favor, autorize o acesso à sua localização no seu navegador.'))
                 );
             }
         });
@@ -803,7 +819,7 @@
             });
 
             document.getElementById('waiting-bus-line').textContent = appState.currentTrip.lineName;
-            showScreen('journey-waiting');
+            showJourneyStep('journey-waiting');
 
             let seconds = 0;
             const timerEl = document.getElementById('waiting-timer');
@@ -817,8 +833,7 @@
             await checkETA(line.id);
 
         } catch (error) {
-            errorEl.textContent = error.message;
-            errorEl.classList.remove('hidden');
+            showAlert(error.message, 'Erro de Localização');
         }
     }
 
@@ -869,7 +884,7 @@
         clearInterval(appState.waitingInterval);
         
         if (!appState.isAuthReady || !appState.userId) {
-            alert("A conexão com os serviços ainda não está pronta. Tente novamente em um instante.");
+            showAlert("A conexão com os serviços ainda não está pronta. Tente novamente em um instante.", "Erro de Conexão");
             return;
         }
 
@@ -894,7 +909,7 @@
             }
 
             document.getElementById('trip-bus-line').textContent = appState.currentTrip.lineName;
-            showScreen('journey-in-progress');
+            showJourneyStep('journey-in-progress');
 
             initializeMap(location);
 
@@ -908,8 +923,8 @@
             }, 1000);
 
         } catch(error) {
-            alert('Erro ao iniciar a viagem: ' + error.message);
-            showScreen('journey-start');
+            showAlert('Erro ao iniciar a viagem: ' + error.message, 'Erro');
+            showJourneyStep('journey-start');
         }
     }
     
@@ -998,6 +1013,7 @@
             startWaitingFromConnection();
         } else {
             showScreen('main-user-interface');
+            showJourneyStep('journey-start');
         }
     }
 
@@ -1019,10 +1035,12 @@
                 status: 'waiting',
                 connectionFrom: appState.currentTrip ? appState.currentTrip.id : null
             };
-            showScreen('journey-start');
-        } catch (error) {
-            alert('Não foi possível obter a localização para a ligação. Tente novamente.');
             showScreen('main-user-interface');
+            showJourneyStep('journey-start');
+        } catch (error) {
+            showAlert('Não foi possível obter a localização para a ligação. Tente novamente.', 'Erro');
+            showScreen('main-user-interface');
+            showJourneyStep('journey-start');
         }
     }
 
@@ -1096,7 +1114,7 @@
     async function saveTripToHistory() {
         if (!appState.isAuthReady || !appState.userId) {
             console.error("Auth not ready. Cannot save trip to history.");
-            alert("Erro de autenticação: Não foi possível guardar a viagem.");
+            showAlert("Erro de autenticação: Não foi possível guardar a viagem.", "Erro");
             return;
         }
         
@@ -1107,7 +1125,7 @@
                 console.log("Trip saved to history for UID:", appState.userId);
             } catch (error) {
                 console.error("Error saving trip online:", error);
-                alert("Erro ao guardar a viagem online. Verifique a sua conexão.");
+                showAlert("Erro ao guardar a viagem online. Verifique a sua conexão.", "Erro");
             }
         } else {
             let history = JSON.parse(localStorage.getItem('offline_history') || '[]');
@@ -1461,7 +1479,7 @@
         localStorage.setItem('supervisorLogoLeft', logoLeftSrc);
         localStorage.setItem('supervisorLogoRight', logoRightSrc);
         loadLogos();
-        alert('Logos guardados com sucesso!');
+        showAlert('Logos guardados com sucesso!', 'Sucesso');
         showScreen('supervisor-dashboard');
     }
 
@@ -1489,10 +1507,10 @@
 
     async function clearAllHistories() {
         if (!appState.isAuthReady || !appState.isOnline) {
-            alert("Erro: Esta operação requer uma conexão online.");
+            showAlert("Erro: Esta operação requer uma conexão online.", "Erro");
             return;
         }
-        alert("A iniciar a limpeza de dados. Isto pode levar um momento.");
+        showAlert("A iniciar a limpeza de dados. Isto pode levar um momento.", "Aguarde");
         try {
             const usersCollRef = window.firebase.collection(appState.db, "artifacts", appId, "users");
             const usersSnapshot = await window.firebase.getDocs(usersCollRef);
@@ -1510,11 +1528,11 @@
 
             await batch.commit();
 
-            alert("Todos os históricos de viagem e dados em tempo real foram limpos com sucesso!");
+            showAlert("Todos os históricos de viagem e dados em tempo real foram limpos com sucesso!", "Sucesso");
             initializeDashboard();
         } catch (error) {
             console.error("Erro ao limpar históricos:", error);
-            alert("Ocorreu um erro ao tentar limpar os dados. Verifique a consola para mais detalhes.");
+            showAlert("Ocorreu um erro ao tentar limpar os dados. Verifique a consola para mais detalhes.", "Erro");
         }
     }
 
@@ -1567,7 +1585,6 @@
             summaryContent.textContent = "Ocorreu um erro ao tentar gerar o resumo. Verifique a consola para detalhes.";
         }
     }
-
 
     // --- App Initialization ---
     window.onload = () => {
