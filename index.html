@@ -1506,33 +1506,42 @@
     }
 
     async function clearAllHistories() {
-        if (!appState.isAuthReady || !appState.isOnline) {
-            showAlert("Erro: Esta operação requer uma conexão online.", "Erro");
-            return;
-        }
-        showAlert("A iniciar a limpeza de dados. Isto pode levar um momento.", "Aguarde");
-        try {
-            const usersCollRef = window.firebase.collection(appState.db, "artifacts", appId, "users");
-            const usersSnapshot = await window.firebase.getDocs(usersCollRef);
-            
-            const batch = window.firebase.writeBatch(appState.db);
-            for (const userDoc of usersSnapshot.docs) {
-                const historyCollRef = window.firebase.collection(appState.db, "artifacts", appId, "users", userDoc.id, "history");
-                const historySnapshot = await window.firebase.getDocs(historyCollRef);
-                historySnapshot.forEach(historyDoc => { batch.delete(historyDoc.ref); });
+        if (appState.isOnline) {
+            showAlert("A iniciar a limpeza de dados online. Isto pode levar um momento.", "Aguarde");
+            if (!appState.isAuthReady) {
+                showAlert("Erro: A autenticação é necessária para realizar esta operação.", "Erro");
+                return;
             }
-            
-            const realtimeCollRef = window.firebase.collection(appState.db, "artifacts", appId, "public", "data", "realtime_bus");
-            const realtimeSnapshot = await window.firebase.getDocs(realtimeCollRef);
-            realtimeSnapshot.forEach(doc => { batch.delete(doc.ref); });
+            try {
+                const usersCollRef = window.firebase.collection(appState.db, "artifacts", appId, "users");
+                const usersSnapshot = await window.firebase.getDocs(usersCollRef);
+                
+                const batch = window.firebase.writeBatch(appState.db);
+                for (const userDoc of usersSnapshot.docs) {
+                    const historyCollRef = window.firebase.collection(appState.db, "artifacts", appId, "users", userDoc.id, "history");
+                    const historySnapshot = await window.firebase.getDocs(historyCollRef);
+                    historySnapshot.forEach(historyDoc => { batch.delete(historyDoc.ref); });
+                }
+                
+                const realtimeCollRef = window.firebase.collection(appState.db, "artifacts", appId, "public", "data", "realtime_bus");
+                const realtimeSnapshot = await window.firebase.getDocs(realtimeCollRef);
+                realtimeSnapshot.forEach(doc => { batch.delete(doc.ref); });
 
-            await batch.commit();
+                await batch.commit();
 
-            showAlert("Todos os históricos de viagem e dados em tempo real foram limpos com sucesso!", "Sucesso");
-            initializeDashboard();
-        } catch (error) {
-            console.error("Erro ao limpar históricos:", error);
-            showAlert("Ocorreu um erro ao tentar limpar os dados. Verifique a consola para mais detalhes.", "Erro");
+                showAlert("Todos os históricos de viagem e dados em tempo real foram limpos com sucesso!", "Sucesso");
+                initializeDashboard();
+            } catch (error) {
+                console.error("Erro ao limpar históricos:", error);
+                showAlert("Ocorreu um erro ao tentar limpar os dados. Verifique a consola para mais detalhes.", "Erro");
+            }
+        } else {
+            // Offline logic
+            showAlert("A limpar dados locais.", "Aguarde");
+            localStorage.removeItem('offline_history');
+            localStorage.removeItem('offline_user_profile');
+            showAlert("Históricos locais limpos com sucesso!", "Sucesso");
+            initializeDashboard(); // Refresh dashboard with empty data
         }
     }
 
