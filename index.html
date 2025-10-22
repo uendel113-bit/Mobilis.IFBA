@@ -166,7 +166,7 @@
                 <div class="text-center mb-8">
                     <img src="mob.png" alt="Mobilis Logo" class="mx-auto w-48 mb-4">
                     <h1 class="text-4xl font-bold text-ifba-green-dark">Mobilis</h1>
-                    <p class="text-lg text-gray-600">Monitorização de Transporte do IFBA Juazeiro</p>
+                    <p class="text-lg text-gray-600">Monitoramento de Transporte do IFBA Juazeiro</p>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <button onclick="showScreen('user-login-screen')" class="p-8 bg-white border border-gray-200 rounded-lg shadow-md hover:shadow-xl transition-shadow text-center">
@@ -192,7 +192,7 @@
                         <option>Ensino Médio</option>
                         <option>Curso técnico em Administração</option>
                         <option>Curso técnico em Segurança do Trabalho</option>
-                        <option>Cursos superiores de Tecnologia em Logística</option>
+                        <option>Curso Superior de Tecnologia em Logística</option>
                     </select>
                     <p id="user-error" class="text-red-500 text-sm mb-4 hidden"></p>
                     <button onclick="loginUser()" class="w-full p-3 rounded-md text-white font-semibold btn-3d btn-green">Entrar / Registar</button>
@@ -219,7 +219,7 @@
                 <!-- Journey Steps -->
                 <div id="journey-start">
                     <h3 class="text-lg font-semibold mb-2">Iniciar Nova Viagem</h3>
-                    <p class="mb-4 text-gray-600">Selecione a linha de autocarro para começar.</p>
+                    <p class="mb-4 text-gray-600">Selecione a linha de ônibus para começar.</p>
                     <select id="bus-line-select" class="w-full p-3 mb-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-ifba-green-light outline-none bg-white">
                         <option value="" disabled selected>Selecione uma linha...</option>
                     </select>
@@ -232,7 +232,7 @@
                 </div>
 
                 <div id="journey-waiting" class="hidden text-center">
-                    <h3 class="text-lg font-semibold mb-2">A aguardar o autocarro...</h3>
+                    <h3 class="text-lg font-semibold mb-2">A aguardar o ônibus...</h3>
                     <p class="text-gray-600">Linha: <span id="waiting-bus-line" class="font-bold"></span></p>
                     <div class="my-6">
                         <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-ifba-green-dark mx-auto"></div>
@@ -275,7 +275,7 @@
             <div id="connection-popup" class="popup-overlay hidden">
                 <div class="bg-white p-8 rounded-lg shadow-2xl text-center w-full max-w-sm">
                     <h3 class="text-xl font-bold text-ifba-green-dark mb-4">Haverá ligação?</h3>
-                    <p class="text-gray-600 mb-6">Vai apanhar outro autocarro para completar a sua viagem?</p>
+                    <p class="text-gray-600 mb-6">Vai embarcar em outro ônibus para completar a sua viagem?</p>
                     <div class="flex justify-around">
                         <button onclick="handleConnection(true)" class="px-8 py-3 rounded-md text-white font-semibold btn-3d btn-green">Sim</button>
                         <button onclick="handleConnection(false)" class="px-8 py-3 rounded-md text-white font-semibold btn-3d btn-gold">Não</button>
@@ -297,7 +297,7 @@
                 <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Avalie a sua Viagem</h2>
                 
                 <div class="mb-8">
-                    <h3 class="text-lg font-semibold mb-4 border-b pb-2">Paragem de Autocarro</h3>
+                    <h3 class="text-lg font-semibold mb-4 border-b pb-2">Ponto de Ônibus</h3>
                     <div class="space-y-4">
                         <div id="stop-rating-criteria"></div>
                         <textarea id="stop-rating-comments" placeholder="Comentários adicionais sobre a paragem (opcional)" class="w-full p-2 border rounded-md" rows="2"></textarea>
@@ -305,10 +305,10 @@
                 </div>
 
                 <div>
-                    <h3 class="text-lg font-semibold mb-4 border-b pb-2">Autocarro</h3>
+                    <h3 class="text-lg font-semibold mb-4 border-b pb-2">Ônibus</h3>
                     <div class="space-y-4">
                          <div id="bus-rating-criteria"></div>
-                         <textarea id="bus-rating-comments" placeholder="Comentários adicionais sobre o autocarro (opcional)" class="w-full p-2 border rounded-md" rows="2"></textarea>
+                         <textarea id="bus-rating-comments" placeholder="Comentários adicionais sobre o ônibus (opcional)" class="w-full p-2 border rounded-md" rows="2"></textarea>
                     </div>
                 </div>
                 <p id="rating-error" class="text-red-500 text-sm mt-4 hidden"></p>
@@ -363,7 +363,13 @@
                             <option value="monthly">Mensal</option>
                             <option value="semiannual">Semestral</option>
                             <option value="annual">Anual</option>
+                            <option value="custom">Customizado</option>
                         </select>
+                        <div id="custom-date-filter" class="hidden space-x-2">
+                            <input type="date" id="start-date" class="input-field w-auto">
+                            <input type="date" id="end-date" class="input-field w-auto">
+                        </div>
+                    </div>
                         <button onclick="generatePDFReport()" class="p-2 rounded-md text-white btn-3d btn-green flex items-center gap-1"><i data-lucide="file-down"></i>Gerar PDF</button>
                         <button onclick="showScreen('manage-lines-screen')" class="p-2 rounded-md text-white btn-3d btn-gold flex items-center gap-1"><i data-lucide="bus"></i>Gerir Linhas</button>
                         <button onclick="showScreen('manage-logos-screen')" class="p-2 rounded-md text-white btn-3d btn-gold flex items-center gap-1"><i data-lucide="image"></i>Gerir Logos</button>
@@ -394,11 +400,11 @@
                         <canvas id="occupancy-chart"></canvas>
                     </div>
                     <div class="lg:col-span-2 bg-white p-4 rounded-lg shadow">
-                         <h3 class="font-semibold mb-2">Avaliação Média dos Itens das Paragens de Autocarro</h3>
+                         <h3 class="font-semibold mb-2">Avaliação Média dos Itens dos Pontos de Ônibus</h3>
                          <canvas id="stop-items-chart"></canvas>
                     </div>
                     <div class="bg-white p-4 rounded-lg shadow">
-                        <h3 class="font-semibold mb-2">Avaliação Média dos Autocarros</h3>
+                        <h3 class="font-semibold mb-2">Avaliação Média dos Ônibus</h3>
                         <canvas id="bus-rating-chart"></canvas>
                     </div>
                     <div class="bg-white p-4 rounded-lg shadow">
@@ -417,7 +423,7 @@
 
              <!-- Supervisor: Manage Lines Screen -->
             <div id="manage-lines-screen" class="hidden bg-white p-8 rounded-lg shadow-lg">
-                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Gerir Linhas de Autocarro</h2>
+                <h2 class="text-2xl font-bold text-ifba-green-dark mb-6">Gerir Linhas de Ônibus</h2>
                 <div class="mb-6">
                     <h3 class="text-lg font-semibold mb-2">Adicionar Nova Linha</h3>
                     <input type="text" id="newLinePrefix" placeholder="Prefixo (Ex: 102)" class="w-full p-2 mb-2 border rounded-md">
@@ -1609,4 +1615,5 @@
 
 </body>
 </html>
+
 
