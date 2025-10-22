@@ -227,7 +227,7 @@
                     <p id="bus-line-error" class="text-red-500 text-sm mb-4 hidden"></p>
                     <button onclick="startWaiting()" class="w-full p-4 rounded-md text-white font-bold text-lg btn-3d btn-green flex items-center justify-center gap-2">
                         <i data-lucide="timer"></i>
-                        Estou à espera do autocarro
+                        Estou à espera do ônibus
                     </button>
                 </div>
 
@@ -274,7 +274,7 @@
             <!-- Connection Popup -->
             <div id="connection-popup" class="popup-overlay hidden">
                 <div class="bg-white p-8 rounded-lg shadow-2xl text-center w-full max-w-sm">
-                    <h3 class="text-xl font-bold text-ifba-green-dark mb-4">Haverá ligação?</h3>
+                    <h3 class="text-xl font-bold text-ifba-green-dark mb-4">Haverá conexão?</h3>
                     <p class="text-gray-600 mb-6">Vai embarcar em outro ônibus para completar a sua viagem?</p>
                     <div class="flex justify-around">
                         <button onclick="handleConnection(true)" class="px-8 py-3 rounded-md text-white font-semibold btn-3d btn-green">Sim</button>
@@ -337,7 +337,7 @@
                     </div>
                     <div class="p-4 bg-gray-100 rounded-lg">
                         <p class="text-sm text-gray-500">Custo Aprox.</p>
-                        <p id="summary-cost" class="text-2xl font-bold">R$ --,--</p>
+                        <p id="summary-cost" class="text-2xl font-semibold">R$ --,--</p>
                     </div>
                 </div>
                 <p class="mt-6 text-gray-500 text-sm">Este ecrã fechará em <span id="summary-countdown">30</span>s.</p>
@@ -1613,6 +1613,7 @@
 
 </body>
 </html>
+
 
 
 
